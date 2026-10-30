@@ -13,14 +13,15 @@ Update this file whenever the current phase, active feature, or implementation s
 ## Completed
 
 - 01-design-system: shadcn/ui setup, UI primitives (Button, Card, Dialog, Input, Tabs, Textarea, ScrollArea), lucide-react, `cn()` helper.
+- 02-editor: `EditorNavbar`, `ProjectSidebar` (floating overlay, My Projects/Shared tabs, empty states, New Project button), `AppDialog` pattern in `components/ui/app-dialog.tsx`. Typecheck and lint clean. Mounted via `EditorShell` (client state owner) in `app/editor/layout.tsx`; `/editor` has a placeholder canvas page.
 
 ## In Progress
 
-- None yet.
+- None.
 
 ## Next Up
 
-- Add the next planned feature unit here.
+- Build the canvas inside `app/editor/page.tsx`.
 
 ## Open Questions
 

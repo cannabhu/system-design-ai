@@ -22,13 +22,15 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - Auth Migration: Removed deprecated Clerk `createRouteMatcher` from `proxy.ts`, which now only runs `clerkMiddleware()` (matcher config unchanged). Auth check moved to resource level: `app/editor/layout.tsx` calls `await auth.protect()` inside `<Suspense>` before rendering `EditorShell`. Typecheck passes.
 
+- 05-prisma: `prisma/models/project.prisma` with `Project` (ownerId, name, description?, `ProjectStatus` DRAFT/ARCHIVED, canvasJsonPath?, timestamps, indexes on ownerId/createdAt) and `ProjectCollaborator` (cascade delete, unique projectId+email, indexes on email and projectId+createdAt). `lib/prisma.ts` is a cached singleton (cached on `globalThis` outside production): `prisma+postgres://` URLs use Accelerate (`@prisma/extension-accelerate`, newly installed), otherwise `@prisma/adapter-pg`. `prisma.config.ts` now loads `.env.local` then `.env` (DATABASE_URL lives in `.env.local`). Migration `init` applied, client generated to `app/generated/prisma`. Typecheck and `npm run build` pass.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Define the next feature spec (project creation / data model, or canvas).
+- Define the next feature spec (wire project dialogs to Prisma, or canvas).
 
 ## Open Questions
 

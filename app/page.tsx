@@ -1,3 +1,17 @@
+import { Suspense } from "react";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+
+async function AuthRedirect(): Promise<null> {
+  const { userId } = await auth();
+
+  redirect(userId ? "/editor" : "/sign-in");
+}
+
 export default function Home() {
-  return <div className="flex flex-1 items-center justify-center">Ghost AI</div>;
+  return (
+    <Suspense>
+      <AuthRedirect />
+    </Suspense>
+  );
 }

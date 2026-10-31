@@ -1,7 +1,5 @@
+import { EditorHome } from "@/components/editor/editor-home";
+
 export default function EditorPage() {
-  return (
-    <main className="flex h-full items-center justify-center text-sm text-copy-muted">
-      Select or create a project to get started.
-    </main>
-  );
+  return <EditorHome />;
 }

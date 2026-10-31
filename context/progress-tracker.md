@@ -24,13 +24,15 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - 05-prisma: `prisma/models/project.prisma` with `Project` (ownerId, name, description?, `ProjectStatus` DRAFT/ARCHIVED, canvasJsonPath?, timestamps, indexes on ownerId/createdAt) and `ProjectCollaborator` (cascade delete, unique projectId+email, indexes on email and projectId+createdAt). `lib/prisma.ts` is a cached singleton (cached on `globalThis` outside production): `prisma+postgres://` URLs use Accelerate (`@prisma/extension-accelerate`, newly installed), otherwise `@prisma/adapter-pg`. `prisma.config.ts` now loads `.env.local` then `.env` (DATABASE_URL lives in `.env.local`). Migration `init` applied, client generated to `app/generated/prisma`. Typecheck and `npm run build` pass.
 
+- 06-project-apis: `app/api/projects/route.ts` (GET list owned projects, POST create; blank/missing name defaults to `Untitled Project`, ID is the schema's cuid) and `app/api/projects/[projectId]/route.ts` (PATCH rename, DELETE returns 204). Auth via Clerk `auth()`: no user returns 401; project missing returns 404; non-owner returns 403 (checked before any mutation); empty rename name returns 400. Shared helpers in `lib/project-request.ts`. `lib/prisma.ts` now types the client as `PrismaClient` so the Accelerate/adapter union is callable. Backend only, UI not wired. `npm run build` passes.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Define the next feature spec (wire project dialogs to Prisma, or canvas).
+- Wire project dialogs/sidebar to the project API (replace `MOCK_PROJECTS`), or canvas.
 
 ## Open Questions
 

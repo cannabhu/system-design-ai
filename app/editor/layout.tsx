@@ -1,13 +1,15 @@
 import { Suspense, type ReactNode } from "react";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 
 import { EditorShell } from "@/components/editor/editor-shell";
+import { getCurrentIdentity } from "@/lib/project-access";
 import { getOwnedProjects, getSharedProjects } from "@/lib/project-queries";
 
 async function ProtectedEditor({ children }: { children: ReactNode }) {
-  const { userId } = await auth.protect();
-  const user = await currentUser();
-  const email = user?.primaryEmailAddress?.emailAddress;
+  await auth.protect();
+  const identity = await getCurrentIdentity();
+  if (!identity) return null;
+  const { userId, email } = identity;
 
   const [ownedProjects, sharedProjects] = await Promise.all([
     getOwnedProjects(userId),

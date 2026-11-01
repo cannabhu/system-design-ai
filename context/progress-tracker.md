@@ -28,13 +28,17 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - 07-wire-editor-home: `app/editor/layout.tsx` (server) fetches owned and shared projects via new `lib/project-queries.ts` (`getOwnedProjects`, `getSharedProjects` by Clerk primary email) and passes them through `EditorShell` to `ProjectSidebar` (names link to `/editor/[id]`). `useProjectDialogs` now calls the API: create generates `slugify(name)-<6 char suffix>` (`createRoomId` in `lib/projects.ts`), `POST /api/projects` with that `id`, then navigates to `/editor/[id]` and refreshes; rename `PATCH` + refresh; delete `DELETE` + redirect to `/editor` if active workspace, else refresh. Dialogs show a room ID preview, pre-filled rename name, project name on delete, and API errors. `POST /api/projects` now accepts an optional validated `id` (409 if taken) so project ID = Liveblocks room ID. Mock projects removed. `npm run build` passes.
 
+- 08-editor-workspace-shell: `app/editor/[roomId]/page.tsx` (server): unauthenticated redirects to `/sign-in`; missing or unauthorized projects render `components/editor/access-denied.tsx` (lock icon, message, link to `/editor`); otherwise renders `WorkspaceCanvas` (dark placeholder, centered message). Access helpers in `lib/project-access.ts` (`getCurrentIdentity`: Clerk `userId` + primary email; `getProjectIfAccessible`: owner or collaborator by email). `EditorShell` reads `roomId` via `useParams`, passes the project name to `EditorNavbar` (name, Share button, AI sidebar toggle shown only on a workspace), and renders the `AiSidebar` placeholder on the right. `ProjectSidebar` highlights the current room. No canvas, Liveblocks, AI chat, or sharing behavior. Typecheck, lint, and `npm run build` pass.
+
+- 09-share-dialog: Navbar Share button opens `components/editor/share-dialog.tsx` (mounted in `EditorShell`). Owners can invite by email, remove collaborators, and see the list; collaborators see the list read-only; everyone can copy the project link (`Copied!` feedback for 2s). APIs: `GET/POST /api/projects/[projectId]/collaborators` (GET for any member; POST owner-only, validates/lowercases email, 400 invalid or own email, 409 duplicate) and `DELETE .../collaborators/[collaboratorId]` (owner-only). Ownership enforced server-side via `getProjectIfAccessible` role. `lib/collaborators.ts` enriches emails with Clerk Backend API (`users.getUserList`) display name + avatar, falling back to email only (also on Clerk errors). No local user table. `Collaborator` type in `lib/projects.ts`.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Workspace route `app/editor/[projectId]` (create navigates there, currently 404), then canvas.
+- Canvas (React Flow + Liveblocks) inside `WorkspaceCanvas` AI chat in `AiSidebar`.
 
 ## Open Questions
 

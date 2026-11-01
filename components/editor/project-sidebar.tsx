@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { FolderOpen, Pencil, Plus, Trash2, Users, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -35,18 +36,33 @@ function EmptyState({ icon: Icon, title, description }: EmptyStateProps) {
 
 interface ProjectItemProps {
   project: Project;
+  isActive: boolean;
   onRename: (project: Project) => void;
   onDelete: (project: Project) => void;
 }
 
-function ProjectItem({ project, onRename, onDelete }: ProjectItemProps) {
+function ProjectItem({
+  project,
+  isActive,
+  onRename,
+  onDelete,
+}: ProjectItemProps) {
   const isOwner = project.role === "owner";
 
   return (
-    <li className="flex items-center gap-1 rounded-xl px-3 py-2 hover:bg-subtle">
+    <li
+      className={cn(
+        "flex items-center gap-1 rounded-xl px-3 py-2 hover:bg-subtle",
+        isActive && "bg-accent-dim",
+      )}
+    >
       <Link
         href={`/editor/${project.id}`}
-        className="min-w-0 flex-1 truncate text-sm text-copy-secondary hover:text-copy-primary"
+        aria-current={isActive ? "page" : undefined}
+        className={cn(
+          "min-w-0 flex-1 truncate text-sm hover:text-copy-primary",
+          isActive ? "font-medium text-brand" : "text-copy-secondary",
+        )}
       >
         {project.name}
       </Link>
@@ -83,6 +99,7 @@ export function ProjectSidebar({
   onClose,
 }: ProjectSidebarProps) {
   const { openCreate, openRename, openDelete } = useProjectDialogsContext();
+  const { roomId } = useParams<{ roomId?: string }>();
 
   return (
     <>
@@ -134,6 +151,7 @@ export function ProjectSidebar({
                   <ProjectItem
                     key={project.id}
                     project={project}
+                    isActive={project.id === roomId}
                     onRename={openRename}
                     onDelete={openDelete}
                   />
@@ -154,6 +172,7 @@ export function ProjectSidebar({
                   <ProjectItem
                     key={project.id}
                     project={project}
+                    isActive={project.id === roomId}
                     onRename={openRename}
                     onDelete={openDelete}
                   />

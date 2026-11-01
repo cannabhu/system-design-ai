@@ -3,9 +3,12 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import {
   DEFAULT_PROJECT_NAME,
+  INVALID_JSON,
   jsonError,
   readJsonBody,
+  hasInvalidProjectId,
   readName,
+  readProjectId,
 } from "@/lib/project-request";
 
 export async function GET() {
@@ -25,14 +28,24 @@ export async function POST(request: Request) {
   if (!userId) return jsonError("Unauthorized", 401);
 
   const body = await readJsonBody(request);
+  if (body === INVALID_JSON) return jsonError("Invalid JSON body", 400);
+
   const name = readName(body);
 
   if (body !== undefined && body !== null && typeof body !== "object") {
     return jsonError("Invalid request body", 400);
   }
 
+  if (hasInvalidProjectId(body)) return jsonError("Invalid project id", 400);
+
+  // The project ID doubles as the Liveblocks room ID, so the client may supply it.
+  const id = readProjectId(body);
+  if (id && (await prisma.project.findUnique({ where: { id } }))) {
+    return jsonError("Project id already exists", 409);
+  }
+
   const project = await prisma.project.create({
-    data: { ownerId: userId, name: name || DEFAULT_PROJECT_NAME },
+    data: { id, ownerId: userId, name: name || DEFAULT_PROJECT_NAME },
   });
 
   return Response.json({ project }, { status: 201 });

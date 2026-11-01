@@ -26,13 +26,15 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - 06-project-apis: `app/api/projects/route.ts` (GET list owned projects, POST create; blank/missing name defaults to `Untitled Project`, ID is the schema's cuid) and `app/api/projects/[projectId]/route.ts` (PATCH rename, DELETE returns 204). Auth via Clerk `auth()`: no user returns 401; project missing returns 404; non-owner returns 403 (checked before any mutation); empty rename name returns 400. Shared helpers in `lib/project-request.ts`. `lib/prisma.ts` now types the client as `PrismaClient` so the Accelerate/adapter union is callable. Backend only, UI not wired. `npm run build` passes.
 
+- 07-wire-editor-home: `app/editor/layout.tsx` (server) fetches owned and shared projects via new `lib/project-queries.ts` (`getOwnedProjects`, `getSharedProjects` by Clerk primary email) and passes them through `EditorShell` to `ProjectSidebar` (names link to `/editor/[id]`). `useProjectDialogs` now calls the API: create generates `slugify(name)-<6 char suffix>` (`createRoomId` in `lib/projects.ts`), `POST /api/projects` with that `id`, then navigates to `/editor/[id]` and refreshes; rename `PATCH` + refresh; delete `DELETE` + redirect to `/editor` if active workspace, else refresh. Dialogs show a room ID preview, pre-filled rename name, project name on delete, and API errors. `POST /api/projects` now accepts an optional validated `id` (409 if taken) so project ID = Liveblocks room ID. Mock projects removed. `npm run build` passes.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Wire project dialogs/sidebar to the project API (replace `MOCK_PROJECTS`), or canvas.
+- Workspace route `app/editor/[projectId]` (create navigates there, currently 404), then canvas.
 
 ## Open Questions
 

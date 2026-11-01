@@ -24,16 +24,15 @@ export function parseShapeDragPayload(raw: string): ShapeDragPayload | null {
   try {
     const value: unknown = JSON.parse(raw);
     if (typeof value !== "object" || value === null) return null;
-    const { shape, width, height } = value as Record<string, unknown>;
+    const { shape } = value as Record<string, unknown>;
     if (
       typeof shape !== "string" ||
-      !(shape in DEFAULT_SHAPE_SIZES) ||
-      typeof width !== "number" ||
-      typeof height !== "number"
+      !Object.prototype.hasOwnProperty.call(DEFAULT_SHAPE_SIZES, shape)
     ) {
       return null;
     }
-    return { shape: shape as CanvasNodeShape, width, height };
+    const size = DEFAULT_SHAPE_SIZES[shape as CanvasNodeShape];
+    return { shape: shape as CanvasNodeShape, width: size.width, height: size.height };
   } catch {
     return null;
   }

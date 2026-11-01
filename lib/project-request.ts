@@ -19,10 +19,12 @@ export async function readJsonBody(
   }
 }
 
+const MAX_PROJECT_NAME_LENGTH = 100;
+
 export function readName(body: unknown): string | undefined {
   if (typeof body !== "object" || body === null) return undefined;
   const { name } = body as { name?: unknown };
-  return typeof name === "string" ? name.trim() : undefined;
+  return typeof name === "string" ? name.trim().slice(0, MAX_PROJECT_NAME_LENGTH) : undefined;
 }
 
 const PROJECT_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,99}$/;

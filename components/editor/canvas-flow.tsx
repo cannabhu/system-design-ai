@@ -5,16 +5,25 @@ import {
   Background,
   BackgroundVariant,
   ConnectionMode,
-  MiniMap,
+  MarkerType,
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
+  type Connection,
+  type EdgeTypes,
   type NodeTypes,
 } from "@xyflow/react";
+import { useCanRedo, useCanUndo, useRedo, useUndo } from "@liveblocks/react";
 import { useLiveblocksFlow } from "@liveblocks/react-flow";
 
+import { CanvasControls } from "@/components/editor/canvas-controls";
+import { CanvasEdgeRenderer } from "@/components/editor/canvas-edge";
 import { CanvasNodeRenderer } from "@/components/editor/canvas-node";
 import { ShapePanel } from "@/components/editor/shape-panel";
+import { useStarterTemplates } from "@/components/editor/starter-templates-context";
+import type { CanvasTemplate } from "@/components/editor/starter-templates";
+import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { SHAPE_DRAG_MIME, parseShapeDragPayload } from "@/lib/canvas-shapes";
 import {
   DEFAULT_NODE_COLOR,
@@ -27,16 +36,64 @@ import "@liveblocks/react-ui/styles.css";
 import "@liveblocks/react-flow/styles.css";
 
 const nodeTypes: NodeTypes = { canvasNode: CanvasNodeRenderer };
+const edgeTypes: EdgeTypes = { canvasEdge: CanvasEdgeRenderer };
+
+const EDGE_COLOR = "#f8fafc";
 
 function CanvasFlowInner() {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onDelete } =
+  const { nodes, edges, onNodesChange, onEdgesChange, onDelete } =
     useLiveblocksFlow<CanvasNode, CanvasEdge>({
       suspense: true,
       nodes: { initial: [] },
       edges: { initial: [] },
     });
-  const { screenToFlowPosition } = useReactFlow<CanvasNode, CanvasEdge>();
+  const reactFlow = useReactFlow<CanvasNode, CanvasEdge>();
+  const { screenToFlowPosition } = reactFlow;
+  const undo = useUndo();
+  const redo = useRedo();
+  const canUndo = useCanUndo();
+  const canRedo = useCanRedo();
   const nodeCounter = useRef(0);
+
+  useKeyboardShortcuts({ reactFlow, undo, redo });
+
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      const edge: CanvasEdge = {
+        id: `edge-${Date.now()}-${connection.source}-${connection.target}`,
+        type: "canvasEdge",
+        source: connection.source,
+        target: connection.target,
+        sourceHandle: connection.sourceHandle,
+        targetHandle: connection.targetHandle,
+        style: {
+          stroke: EDGE_COLOR,
+          strokeWidth: 1.5,
+          strokeLinecap: "round",
+          strokeLinejoin: "round",
+        },
+        markerEnd: { type: MarkerType.ArrowClosed, color: EDGE_COLOR },
+      };
+      onEdgesChange([{ type: "add", item: edge }]);
+    },
+    [onEdgesChange],
+  );
+
+  const { isOpen: isTemplatesOpen, setOpen: setTemplatesOpen } =
+    useStarterTemplates();
+
+  const handleImportTemplate = useCallback(
+    (template: CanvasTemplate) => {
+      // Clear the current canvas first, then add the template, all through the
+      // shared Liveblocks flow state so collaborators see the replacement.
+      onEdgesChange(edges.map((edge) => ({ type: "remove", id: edge.id })));
+      onNodesChange(nodes.map((node) => ({ type: "remove", id: node.id })));
+      onNodesChange(template.nodes.map((item) => ({ type: "add", item })));
+      onEdgesChange(template.edges.map((item) => ({ type: "add", item })));
+      setTimeout(() => reactFlow.fitView({ duration: 200 }), 50);
+    },
+    [edges, nodes, onEdgesChange, onNodesChange, reactFlow],
+  );
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
     if (!event.dataTransfer.types.includes(SHAPE_DRAG_MIME)) return;
@@ -85,18 +142,30 @@ function CanvasFlowInner() {
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
+        onConnect={handleConnect}
         onDelete={onDelete}
         connectionMode={ConnectionMode.Loose}
         colorMode="dark"
         fitView
       >
-        <MiniMap />
         <Background variant={BackgroundVariant.Dots} />
       </ReactFlow>
+      <CanvasControls
+        reactFlow={reactFlow}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={undo}
+        onRedo={redo}
+      />
       <ShapePanel />
+      <StarterTemplatesModal
+        open={isTemplatesOpen}
+        onOpenChange={setTemplatesOpen}
+        onImport={handleImportTemplate}
+      />
     </div>
   );
 }

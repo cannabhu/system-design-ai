@@ -9,6 +9,7 @@ import { ProjectDialogsProvider } from "@/components/editor/project-dialogs-cont
 import { AiSidebar } from "@/components/editor/ai-sidebar";
 import { ShareDialog } from "@/components/editor/share-dialog";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
+import { StarterTemplatesContext } from "@/components/editor/starter-templates-context";
 import type { Project } from "@/lib/projects";
 
 interface EditorShellProps {
@@ -25,6 +26,7 @@ export function EditorShell({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const { roomId } = useParams<{ roomId?: string }>();
   const activeProject = roomId
     ? [...ownedProjects, ...sharedProjects].find((p) => p.id === roomId)
@@ -39,6 +41,7 @@ export function EditorShell({
           projectName={activeProject?.name}
           isAiSidebarOpen={isAiSidebarOpen}
           onShare={() => setIsShareOpen(true)}
+          onOpenTemplates={() => setIsTemplatesOpen(true)}
           onToggleAiSidebar={() => setIsAiSidebarOpen((open) => !open)}
         />
         <div className="relative flex min-h-0 flex-1 overflow-hidden">
@@ -48,7 +51,13 @@ export function EditorShell({
             sharedProjects={sharedProjects}
             onClose={() => setIsSidebarOpen(false)}
           />
-          <div className="min-w-0 flex-1">{children}</div>
+          <div className="min-w-0 flex-1">
+            <StarterTemplatesContext.Provider
+              value={{ isOpen: isTemplatesOpen, setOpen: setIsTemplatesOpen }}
+            >
+              {children}
+            </StarterTemplatesContext.Provider>
+          </div>
           {activeProject && <AiSidebar isOpen={isAiSidebarOpen} />}
         </div>
       </div>

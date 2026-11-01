@@ -106,9 +106,7 @@ export function ShareDialog({
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    setIsLoading(true);
-    setCollaborators([]);
-    setError(null);
+    
 
     (async () => {
       try {

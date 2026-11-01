@@ -22,9 +22,10 @@ export const getCurrentIdentity = cache(async (): Promise<CurrentIdentity | null
   if (!userId) return null;
 
   const user = await currentUser();
+  const primary = user?.primaryEmailAddress;
   return {
     userId,
-    email: user?.primaryEmailAddress?.emailAddress ?? null,
+    email: primary?.verification?.status === "verified" ? primary.emailAddress : null,
   };
 });
 

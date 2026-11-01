@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import {
   Circle,
   Cylinder,
@@ -15,7 +16,12 @@ import {
   SHAPE_DRAG_MIME,
   type ShapeDragPayload,
 } from "@/lib/canvas-shapes";
-import { NODE_SHAPES, type CanvasNodeShape } from "@/types/canvas";
+import { NodeShape } from "@/components/editor/node-shape";
+import {
+  DEFAULT_NODE_COLOR,
+  NODE_SHAPES,
+  type CanvasNodeShape,
+} from "@/types/canvas";
 
 const SHAPE_ICONS: Record<CanvasNodeShape, LucideIcon> = {
   rectangle: Square,
@@ -27,6 +33,10 @@ const SHAPE_ICONS: Record<CanvasNodeShape, LucideIcon> = {
 };
 
 export function ShapePanel() {
+  const ghostRefs = useRef<Partial<Record<CanvasNodeShape, HTMLDivElement>>>(
+    {},
+  );
+
   function handleDragStart(
     event: React.DragEvent<HTMLButtonElement>,
     shape: CanvasNodeShape,
@@ -34,10 +44,36 @@ export function ShapePanel() {
     const payload: ShapeDragPayload = { shape, ...DEFAULT_SHAPE_SIZES[shape] };
     event.dataTransfer.setData(SHAPE_DRAG_MIME, JSON.stringify(payload));
     event.dataTransfer.effectAllowed = "move";
+
+    // The node lands with its top-left at the cursor, so anchor the ghost there.
+    const ghost = ghostRefs.current[shape];
+    if (ghost) event.dataTransfer.setDragImage(ghost, 0, 0);
   }
 
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-6 z-10 flex justify-center">
+      <div aria-hidden className="pointer-events-none fixed -top-[9999px] left-0">
+        {NODE_SHAPES.map((shape) => {
+          const { width, height } = DEFAULT_SHAPE_SIZES[shape];
+          return (
+            <div
+              key={shape}
+              ref={(element) => {
+                if (element) ghostRefs.current[shape] = element;
+                else delete ghostRefs.current[shape];
+              }}
+              className="opacity-60"
+              style={{ width, height }}
+            >
+              <NodeShape
+                shape={shape}
+                fill={DEFAULT_NODE_COLOR.fill}
+                textColor={DEFAULT_NODE_COLOR.text}
+              />
+            </div>
+          );
+        })}
+      </div>
       <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-surface-border bg-surface/90 p-1.5 backdrop-blur">
         {NODE_SHAPES.map((shape) => {
           const Icon = SHAPE_ICONS[shape];

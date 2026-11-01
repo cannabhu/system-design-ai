@@ -38,13 +38,27 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - 12-shape-panel: `components/editor/shape-panel.tsx` (floating bottom-center pill toolbar; draggable rectangle/diamond/circle/pill/cylinder/hexagon buttons, payload `{shape, width, height}` under `SHAPE_DRAG_MIME`). Defaults/parsing in `lib/canvas-shapes.ts` (rectangle 160x80, circle 100x100, diamond 160x120, etc.). `CanvasFlow` is wrapped in `ReactFlowProvider`; the wrapper handles `dragover`/`drop`, converts with `screenToFlowPosition`, and adds a `canvasNode` (empty label, default color `#1F1F1F`, ID `shape-timestamp-counter`) through `onNodesChange([{type:'add'}])`. `components/editor/canvas-node.tsx` renders every shape as a bordered rectangle with centered label (shape visuals later). `types/canvas.ts` gained `NODE_SHAPES` (incl. cylinder, hexagon), `NODE_COLORS`, `DEFAULT_NODE_COLOR`. `npm run build` passes; drag/drop not yet exercised in a live room.
 
+- 13-node-shape: `components/editor/node-shape.tsx` renders each shape: rectangle/pill/circle with CSS (`rounded-xl`/`rounded-full` + border), diamond/hexagon/cylinder as inline SVG (100x100 viewBox, `preserveAspectRatio="none"`, `non-scaling-stroke` so borders stay constant while scaling with node size). Borders use `surface-border` at rest and `brand` when selected. `CanvasNodeRenderer` passes `data.shape`, palette, and `selected` into it (still driven by the Liveblocks flow state). Shape panel renders offscreen ghost copies of each shape at its default size and uses `dataTransfer.setDragImage` (anchored top-left to match where the node drops), so the ghost follows the cursor and disappears on drop or cancel. Drop logic, panel layout, resize, and label editing untouched.
+
+- 14-node-editing: `CanvasNodeRenderer` (`components/editor/canvas-node.tsx`) adds `NodeResizer` (visible only when selected and not editing, min 60x40, subtle brand-colored handles/lines) and inline label editing. Double-clicking the centered hit area opens a textarea (`nodrag nopan nowheel`) overlaid at the label position; the static label is hidden (not unmounted) while editing so nothing shifts. Empty labels show a faint `Label` placeholder in the same spot. Typing calls `updateNodeData`, and resizing emits dimension changes, both through `onNodesChange` into the Liveblocks flow state. Blur or `Escape` closes editing. Shape rendering, shape panel, and drop logic untouched.
+
+- Edges: nodes have four source handles (top/right/bottom/left, small white dots with a dark border, hidden until node hover; loose connection mode lets any handle connect to any other). `CanvasFlow.handleConnect` adds a `canvasEdge` (`#f8fafc` 1.5px stroke, round caps, arrow marker) via `onEdgesChange([{type:'add'}])`, so edges sync to collaborators through Liveblocks. Deleting a selected edge uses the existing `onDelete`.
+
+- 16-edge-behavior: `components/editor/canvas-edge.tsx` (`CanvasEdgeRenderer`, registered as `canvasEdge`) draws right-angle edges with `getSmoothStepPath`, dimmed at rest (0.55 opacity) and full on hover/selection, with a 20px invisible hit area (`BaseEdge` `interactionWidth`) so the visible line stays thin. Double-click edits the label inline: label is positioned via `EdgeLabelRenderer` at the path's `labelX/labelY`, input grows with text (hidden mirror span), saves on blur/Enter/Escape. Saved labels render as pill badges; an active edge with no label shows a faint hint. Label wrapper is `nodrag nopan nowheel` and stops pointer events. Labels write via `updateEdgeData` into `data.label`, so they sync through the Liveblocks flow state. `CanvasEdge` data type is now `CanvasEdgeData { label?: string }`. Nodes, shape panel untouched.
+
+- 15-nodes-color-toolbar: floating color toolbar (`NodeToolbar`) above selected nodes in `components/editor/canvas-node.tsx`, one swatch per `NODE_COLORS` pair (active swatch ringed, hover glow from the pair's text color). Swatch click calls `updateNodeData(id, { color: fill })`, so both node fill and paired text color update through the Liveblocks flow state with no server calls. Toolbar is `nodrag nopan` and stops pointer events so it never drags nodes or pans. Palette reused from `types/canvas.ts`. `npm run build` passes; verified working in a live room.
+
+- 17-canvas-ergonomics: `components/editor/canvas-controls.tsx` is a floating pill at the bottom-left of the canvas (above the shape panel in z-order) with zoom out / fit view / zoom in (React Flow instance, 200ms animation), a thin divider, then undo / redo wired to Liveblocks `useUndo`/`useRedo`, disabled and dimmed via `useCanUndo`/`useCanRedo`. `hooks/useKeyboardShortcuts.ts` listens on `window` (skips inputs, textareas, selects, contenteditable): `+`/`=` zoom in, `-` zoom out, Cmd/Ctrl+Z undo, Cmd/Ctrl+Shift+Z and Cmd/Ctrl+Y redo. Minimap removed. Shape panel, node/edge rendering, and collaborative state untouched.
+
+- 18-starter-template: `components/editor/starter-templates.ts` defines `CanvasTemplate` and `CANVAS_TEMPLATES` (Microservices, CI/CD Pipeline, Event-Driven System) using shared canvas types, `NODE_COLORS`, and default shape sizes via small `node`/`link` helpers. `starter-templates-modal.tsx` is an `AppDialog` with a scrollable template grid; each card has an SVG preview (bounds from node positions, fitted to 240x140, lines between node centers, shapes/colors from node data), name, description, and an Import button that calls `onImport` then closes. A navbar Templates button toggles state held in `EditorShell`, shared via `StarterTemplatesContext` (`starter-templates-context.tsx`) because the navbar sits outside the Liveblocks room. `CanvasFlow` renders the modal; import removes all existing edges and nodes, then adds the template's through `onEdgesChange`/`onNodesChange` (so it syncs via Liveblocks), then calls `fitView`. No template saving, custom templates, or persistence.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Canvas controls, shape-specific node visuals, custom edge rendering, and AI chat in `AiSidebar`.
+- AI chat in `AiSidebar`.
 
 ## Open Questions
 
@@ -53,7 +67,7 @@ Update this file whenever the current phase, active feature, or implementation s
 ## Architecture Decisions
 
 - Cache Components is on: Clerk components and `auth()` must sit inside `<Suspense>`.
-- Auth is resource-based, not middleware-based: `proxy.ts` does no path matching or protection. Every new protected page, API route, or Server Function must call `auth.protect()` (or `auth()`) itself; the editor layout check doesn't cover API routes or private data fetched elsewhere.
+- Auth is resource-based, not middleware-based: `proxy.ts` only runs `clerkMiddleware()`; its `matcher` config decides which requests invoke Clerk middleware, but it does not enforce path-based authorization or protect any route. Every new protected page, API route, or Server Function must call `auth.protect()` (or `auth()`) itself; the editor layout check doesn't cover API routes or private data fetched elsewhere.
 - Added standard Clerk URL env vars (`NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `..._SIGN_UP_URL`, `..._FALLBACK_REDIRECT_URL`) to `.env.local`; they were absent.
 
 ## Session Notes

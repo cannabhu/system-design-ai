@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
-
 import { prisma } from "@/lib/prisma";
+import { getLiveblocks } from "@/lib/liveblocks";
 import { jsonError, readJsonBody, readName } from "@/lib/project-request";
 
 type ProjectContext = RouteContext<"/api/projects/[projectId]">;
@@ -44,6 +44,14 @@ export async function DELETE(_request: Request, ctx: ProjectContext) {
   if (denied) return denied;
 
   await prisma.project.delete({ where: { id: projectId } });
+
+  // Best-effort cleanup: the project ID is the Liveblocks room ID. A missing
+  // room or a Liveblocks outage must not fail the deletion.
+  try {
+    await getLiveblocks().deleteRoom(projectId);
+  } catch (error) {
+    console.warn(`Failed to delete Liveblocks room ${projectId}`, error);
+  }
 
   return new Response(null, { status: 204 });
 }

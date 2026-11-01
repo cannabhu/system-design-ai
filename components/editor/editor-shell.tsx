@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { EditorNavbar } from "@/components/editor/editor-navbar";
 import { ProjectDialogsProvider } from "@/components/editor/project-dialogs-context";
+import { AiSidebar } from "@/components/editor/ai-sidebar";
+import { ShareDialog } from "@/components/editor/share-dialog";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import type { Project } from "@/lib/projects";
 
@@ -20,6 +23,12 @@ export function EditorShell({
   children,
 }: EditorShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const { roomId } = useParams<{ roomId?: string }>();
+  const activeProject = roomId
+    ? [...ownedProjects, ...sharedProjects].find((p) => p.id === roomId)
+    : undefined;
 
   return (
     <ProjectDialogsProvider>
@@ -27,17 +36,31 @@ export function EditorShell({
         <EditorNavbar
           isSidebarOpen={isSidebarOpen}
           onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
+          projectName={activeProject?.name}
+          isAiSidebarOpen={isAiSidebarOpen}
+          onShare={() => setIsShareOpen(true)}
+          onToggleAiSidebar={() => setIsAiSidebarOpen((open) => !open)}
         />
-        <div className="relative min-h-0 flex-1 overflow-hidden">
+        <div className="relative flex min-h-0 flex-1 overflow-hidden">
           <ProjectSidebar
             isOpen={isSidebarOpen}
             ownedProjects={ownedProjects}
             sharedProjects={sharedProjects}
             onClose={() => setIsSidebarOpen(false)}
           />
-          {children}
+          <div className="min-w-0 flex-1">{children}</div>
+          {activeProject && <AiSidebar isOpen={isAiSidebarOpen} />}
         </div>
       </div>
+      {activeProject && (
+        <ShareDialog
+          open={isShareOpen}
+          onOpenChange={setIsShareOpen}
+          projectId={activeProject.id}
+          role={activeProject.role}
+          key={activeProject.id}
+        />
+      )}
     </ProjectDialogsProvider>
   );
 }

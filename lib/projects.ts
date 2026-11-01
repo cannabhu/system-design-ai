@@ -17,5 +17,13 @@ export function slugify(name: string): string {
 /** Project ID and Liveblocks room ID: the slugified name plus a short unique suffix. */
 export function createRoomId(name: string): string {
   const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 6);
-  return `${slugify(name)}-${suffix}`;
+  const base = slugify(name).slice(0, 80).replace(/-+$/g, "");
+  return `${base}-${suffix}`;
+}
+
+export interface Collaborator {
+  id: string;
+  email: string;
+  name: string | null;
+  imageUrl: string | null;
 }

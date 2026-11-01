@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FolderOpen, Pencil, Plus, Trash2, Users, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -11,6 +12,8 @@ import type { Project } from "@/lib/projects";
 
 interface ProjectSidebarProps {
   isOpen: boolean;
+  ownedProjects: Project[];
+  sharedProjects: Project[];
   onClose: () => void;
 }
 
@@ -41,9 +44,12 @@ function ProjectItem({ project, onRename, onDelete }: ProjectItemProps) {
 
   return (
     <li className="flex items-center gap-1 rounded-xl px-3 py-2 hover:bg-subtle">
-      <span className="min-w-0 flex-1 truncate text-sm text-copy-secondary">
+      <Link
+        href={`/editor/${project.id}`}
+        className="min-w-0 flex-1 truncate text-sm text-copy-secondary hover:text-copy-primary"
+      >
         {project.name}
-      </span>
+      </Link>
       {isOwner && (
         <>
           <Button
@@ -70,11 +76,13 @@ function ProjectItem({ project, onRename, onDelete }: ProjectItemProps) {
   );
 }
 
-export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
-  const { projects, openCreate, openRename, openDelete } =
-    useProjectDialogsContext();
-  const owned = projects.filter((p) => p.role === "owner");
-  const shared = projects.filter((p) => p.role === "collaborator");
+export function ProjectSidebar({
+  isOpen,
+  ownedProjects: owned,
+  sharedProjects: shared,
+  onClose,
+}: ProjectSidebarProps) {
+  const { openCreate, openRename, openDelete } = useProjectDialogsContext();
 
   return (
     <>

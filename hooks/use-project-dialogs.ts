@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
-import { MOCK_PROJECTS, slugify } from "@/lib/projects";
+import { createRoomId, slugify } from "@/lib/projects";
 import type { Project } from "@/lib/projects";
 
 type DialogState =
@@ -11,19 +12,27 @@ type DialogState =
   | { type: "rename"; project: Project }
   | { type: "delete"; project: Project };
 
-const MOCK_LATENCY_MS = 400;
-
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+async function readError(response: Response): Promise<string> {
+  try {
+    const { error } = (await response.json()) as { error?: string };
+    if (error) return error;
+  } catch {
+    // Fall through to the generic message.
+  }
+  return "Something went wrong. Please try again.";
+}
 
 /**
- * Owns project dialog state, form state and loading state. Projects are
- * mock, in-memory data only: nothing is sent to an API or persisted.
+ * Owns project dialog state, form state and loading state, and performs
+ * project mutations against `/api/projects`.
  */
 export function useProjectDialogs() {
-  const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
+  const router = useRouter();
+  const pathname = usePathname();
   const [dialog, setDialog] = useState<DialogState>({ type: "closed" });
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const slug = slugify(name);
   const canSubmit = slug.length > 0 && !isLoading;
@@ -35,16 +44,55 @@ export function useProjectDialogs() {
 
   const openCreate = () => {
     setName("");
+    setError(null);
     setDialog({ type: "create" });
   };
 
   const openRename = (project: Project) => {
     setName(project.name);
+    setError(null);
     setDialog({ type: "rename", project });
   };
 
   const openDelete = (project: Project) => {
+    setError(null);
     setDialog({ type: "delete", project });
+  };
+
+  const createProject = async () => {
+    const id = createRoomId(name);
+    const response = await fetch("/api/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, name: name.trim() }),
+    });
+    if (!response.ok) throw new Error(await readError(response));
+
+    router.push(`/editor/${id}`);
+    router.refresh();
+  };
+
+  const renameProject = async (project: Project) => {
+    const response = await fetch(`/api/projects/${project.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim() }),
+    });
+    if (!response.ok) throw new Error(await readError(response));
+
+    router.refresh();
+  };
+
+  const deleteProject = async (project: Project) => {
+    const response = await fetch(`/api/projects/${project.id}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error(await readError(response));
+
+    if (pathname === `/editor/${project.id}`) {
+      router.push("/editor");
+    }
+    router.refresh();
   };
 
   const submit = async () => {
@@ -52,33 +100,27 @@ export function useProjectDialogs() {
     if (dialog.type !== "delete" && !canSubmit) return;
 
     setIsLoading(true);
-    await wait(MOCK_LATENCY_MS);
+    setError(null);
 
-    if (dialog.type === "create") {
-      setProjects((prev) => [
-        { id: crypto.randomUUID(), name: name.trim(), slug, role: "owner" },
-        ...prev,
-      ]);
-    } else if (dialog.type === "rename") {
-      const { id } = dialog.project;
-      setProjects((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, name: name.trim(), slug } : p)),
-      );
-    } else {
-      const { id } = dialog.project;
-      setProjects((prev) => prev.filter((p) => p.id !== id));
+    try {
+      if (dialog.type === "create") await createProject();
+      else if (dialog.type === "rename") await renameProject(dialog.project);
+      else await deleteProject(dialog.project);
+
+      setDialog({ type: "closed" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
-    setDialog({ type: "closed" });
   };
 
   return {
-    projects,
     dialog,
     name,
     setName,
     slug,
+    error,
     canSubmit,
     isLoading,
     openCreate,

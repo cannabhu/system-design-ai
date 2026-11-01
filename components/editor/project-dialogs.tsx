@@ -12,8 +12,17 @@ interface ProjectDialogsProps {
 }
 
 export function ProjectDialogs({ controller }: ProjectDialogsProps) {
-  const { dialog, name, setName, slug, canSubmit, isLoading, close, submit } =
-    controller;
+  const {
+    dialog,
+    name,
+    setName,
+    slug,
+    error,
+    canSubmit,
+    isLoading,
+    close,
+    submit,
+  } = controller;
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -35,6 +44,12 @@ export function ProjectDialogs({ controller }: ProjectDialogsProps) {
       aria-label="Project name"
       disabled={isLoading}
     />
+  );
+
+  const errorMessage = error && (
+    <p role="alert" className="text-xs text-state-error">
+      {error}
+    </p>
   );
 
   return (
@@ -64,9 +79,12 @@ export function ProjectDialogs({ controller }: ProjectDialogsProps) {
         >
           {nameField}
           <p className="text-xs text-copy-muted">
-            Slug:{" "}
-            <span className="font-mono text-copy-secondary">{slug || "—"}</span>
+            Room ID:{" "}
+            <span className="font-mono text-copy-secondary">
+              {slug ? `${slug}-xxxxxx` : "—"}
+            </span>
           </p>
+          {errorMessage}
         </form>
       </AppDialog>
 
@@ -92,8 +110,13 @@ export function ProjectDialogs({ controller }: ProjectDialogsProps) {
           </>
         }
       >
-        <form id="rename-project-form" onSubmit={handleSubmit}>
+        <form
+          id="rename-project-form"
+          onSubmit={handleSubmit}
+          className="space-y-2"
+        >
           {nameField}
+          {errorMessage}
         </form>
       </AppDialog>
 
@@ -108,6 +131,7 @@ export function ProjectDialogs({ controller }: ProjectDialogsProps) {
         }
         footer={
           <>
+            {errorMessage}
             {cancelButton}
             <Button
               type="button"

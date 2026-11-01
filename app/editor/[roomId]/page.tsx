@@ -17,7 +17,7 @@ async function Workspace({ params }: { params: Promise<{ roomId: string }> }) {
   const project = await getProjectIfAccessible(roomId, identity);
   if (!project) return <AccessDenied />;
 
-  return <WorkspaceCanvas projectName={project.name} />;
+  return <WorkspaceCanvas roomId={project.id} />;
 }
 
 export default function WorkspacePage({

@@ -1,11 +1,45 @@
-import { Workflow } from "lucide-react";
+"use client";
 
-export function WorkspaceCanvas({ projectName }: { projectName: string }) {
+import {
+  ClientSideSuspense,
+  LiveblocksProvider,
+  RoomProvider,
+} from "@liveblocks/react/suspense";
+import { ErrorBoundary } from "react-error-boundary";
+
+import { CanvasFlow } from "@/components/editor/canvas-flow";
+
+function CanvasMessage({ children }: { children: React.ReactNode }) {
   return (
-    <main className="flex h-full flex-col items-center justify-center gap-2 bg-base px-6 text-center">
-      <Workflow className="h-8 w-8 text-copy-faint" />
-      <p className="text-sm font-medium text-copy-secondary">{projectName}</p>
-      <p className="text-xs text-copy-muted">Canvas coming soon</p>
+    <div className="flex h-full items-center justify-center bg-base px-6 text-center text-sm text-copy-muted">
+      {children}
+    </div>
+  );
+}
+
+export function WorkspaceCanvas({ roomId }: { roomId: string }) {
+  return (
+    <main className="h-full bg-base">
+      <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
+        <RoomProvider
+          id={roomId}
+          initialPresence={{ cursor: null, isThinking: false }}
+        >
+          <ErrorBoundary
+            fallback={
+              <CanvasMessage>
+                Could not connect to the canvas. Refresh to try again.
+              </CanvasMessage>
+            }
+          >
+            <ClientSideSuspense
+              fallback={<CanvasMessage>Loading canvas…</CanvasMessage>}
+            >
+              <CanvasFlow />
+            </ClientSideSuspense>
+          </ErrorBoundary>
+        </RoomProvider>
+      </LiveblocksProvider>
     </main>
   );
 }

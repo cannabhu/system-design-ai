@@ -32,13 +32,19 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - 09-share-dialog: Navbar Share button opens `components/editor/share-dialog.tsx` (mounted in `EditorShell`). Owners can invite by email, remove collaborators, and see the list; collaborators see the list read-only; everyone can copy the project link (`Copied!` feedback for 2s). APIs: `GET/POST /api/projects/[projectId]/collaborators` (GET for any member; POST owner-only, validates/lowercases email, 400 invalid or own email, 409 duplicate) and `DELETE .../collaborators/[collaboratorId]` (owner-only). Ownership enforced server-side via `getProjectIfAccessible` role. `lib/collaborators.ts` enriches emails with Clerk Backend API (`users.getUserList`) display name + avatar, falling back to email only (also on Clerk errors). No local user table. `Collaborator` type in `lib/projects.ts`.
 
+- 10-liveblocks-setup: `liveblocks.config.ts` types Presence (`cursor`, `isThinking`) and UserMeta (`id`, `info.name/avatar/color`). `lib/liveblocks.ts` is a cached node client (`getLiveblocks`, needs `LIVEBLOCKS_SECRET_KEY`); `lib/cursor-color.ts` hashes a user ID to a fixed palette color. `POST /api/liveblocks-auth` requires Clerk auth (401), reads `room` from the body (room ID = project ID), checks `getProjectIfAccessible` (403), `getOrCreateRoom` with no default access, and returns a session token carrying name, avatar, and color. Installed `@liveblocks/node` (the spec assumed it was present). Not yet exercised: `LIVEBLOCKS_SECRET_KEY` must be added to `.env.local`.
+
+- 11-base-canvas: `WorkspaceCanvas` (client) now takes `roomId` and sets up `LiveblocksProvider` (`/api/liveblocks-auth`), `RoomProvider` (initial presence `cursor: null`, plus `isThinking: false` as the Presence type requires it), `ErrorBoundary` (connection-error fallback) and `ClientSideSuspense` (loading state). `components/editor/canvas-flow.tsx` uses `useLiveblocksFlow` (suspense, empty initial nodes/edges) wired into `ReactFlow` with loose connection mode, `fitView`, `MiniMap`, dot `Background`. Shared types in `types/canvas.ts` (`CanvasNodeData` label/color/shape, `canvasNode`, `canvasEdge`). Workspace page stays server-side and passes `project.id`. Installed `react-error-boundary`. No controls, custom node/edge rendering, persistence, or AI. `npm run build` passes; not yet exercised against a live room (needs `LIVEBLOCKS_SECRET_KEY`).
+
+- 12-shape-panel: `components/editor/shape-panel.tsx` (floating bottom-center pill toolbar; draggable rectangle/diamond/circle/pill/cylinder/hexagon buttons, payload `{shape, width, height}` under `SHAPE_DRAG_MIME`). Defaults/parsing in `lib/canvas-shapes.ts` (rectangle 160x80, circle 100x100, diamond 160x120, etc.). `CanvasFlow` is wrapped in `ReactFlowProvider`; the wrapper handles `dragover`/`drop`, converts with `screenToFlowPosition`, and adds a `canvasNode` (empty label, default color `#1F1F1F`, ID `shape-timestamp-counter`) through `onNodesChange([{type:'add'}])`. `components/editor/canvas-node.tsx` renders every shape as a bordered rectangle with centered label (shape visuals later). `types/canvas.ts` gained `NODE_SHAPES` (incl. cylinder, hexagon), `NODE_COLORS`, `DEFAULT_NODE_COLOR`. `npm run build` passes; drag/drop not yet exercised in a live room.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Canvas (React Flow + Liveblocks) inside `WorkspaceCanvas` AI chat in `AiSidebar`.
+- Canvas controls, shape-specific node visuals, custom edge rendering, and AI chat in `AiSidebar`.
 
 ## Open Questions
 

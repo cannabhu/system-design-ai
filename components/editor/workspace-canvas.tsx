@@ -23,7 +23,7 @@ export function WorkspaceCanvas({ roomId }: { roomId: string }) {
       <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
         <RoomProvider
           id={roomId}
-          initialPresence={{ cursor: null, isThinking: false }}
+          initialPresence={{ cursor: null, thinking: false }}
         >
           <ErrorBoundary
             fallback={
@@ -35,7 +35,7 @@ export function WorkspaceCanvas({ roomId }: { roomId: string }) {
             <ClientSideSuspense
               fallback={<CanvasMessage>Loading canvas…</CanvasMessage>}
             >
-              <CanvasFlow />
+              <CanvasFlow roomId={roomId} />
             </ClientSideSuspense>
           </ErrorBoundary>
         </RoomProvider>

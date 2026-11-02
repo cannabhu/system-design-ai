@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -13,16 +13,27 @@ import {
   type EdgeTypes,
   type NodeTypes,
 } from "@xyflow/react";
-import { useCanRedo, useCanUndo, useRedo, useUndo } from "@liveblocks/react";
+import {
+  useCanRedo,
+  useCanUndo,
+  useRedo,
+  useUndo,
+  useUpdateMyPresence,
+} from "@liveblocks/react";
 import { useLiveblocksFlow } from "@liveblocks/react-flow";
 
 import { CanvasControls } from "@/components/editor/canvas-controls";
 import { CanvasEdgeRenderer } from "@/components/editor/canvas-edge";
 import { CanvasNodeRenderer } from "@/components/editor/canvas-node";
+import { useCanvasSave } from "@/components/editor/canvas-save-context";
+import { LiveCursors } from "@/components/editor/live-cursors";
+import { PresenceAvatars } from "@/components/editor/presence-avatars";
 import { ShapePanel } from "@/components/editor/shape-panel";
 import { useStarterTemplates } from "@/components/editor/starter-templates-context";
 import type { CanvasTemplate } from "@/components/editor/starter-templates";
 import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal";
+import { useCanvasAutosave } from "@/hooks/use-canvas-autosave";
+import { useCanvasLoad } from "@/hooks/use-canvas-load";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { SHAPE_DRAG_MIME, parseShapeDragPayload } from "@/lib/canvas-shapes";
 import {
@@ -40,7 +51,7 @@ const edgeTypes: EdgeTypes = { canvasEdge: CanvasEdgeRenderer };
 
 const EDGE_COLOR = "#f8fafc";
 
-function CanvasFlowInner() {
+function CanvasFlowInner({ roomId }: { roomId: string }) {
   const { nodes, edges, onNodesChange, onEdgesChange, onDelete } =
     useLiveblocksFlow<CanvasNode, CanvasEdge>({
       suspense: true,
@@ -54,8 +65,36 @@ function CanvasFlowInner() {
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
   const nodeCounter = useRef(0);
+  const updateMyPresence = useUpdateMyPresence();
 
   useKeyboardShortcuts({ reactFlow, undo, redo });
+
+  const isLoaded = useCanvasLoad({
+    projectId: roomId,
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+  });
+  const { status, saveNow } = useCanvasAutosave({
+    projectId: roomId,
+    nodes,
+    edges,
+    enabled: isLoaded,
+  });
+  const { setStatus, registerSave } = useCanvasSave();
+
+  useEffect(() => {
+    setStatus(status);
+  }, [status, setStatus]);
+
+  useEffect(() => {
+    registerSave(saveNow);
+    return () => {
+      registerSave(null);
+      setStatus("idle");
+    };
+  }, [saveNow, registerSave, setStatus]);
 
   const handleConnect = useCallback(
     (connection: Connection) => {
@@ -95,7 +134,20 @@ function CanvasFlowInner() {
     [edges, nodes, onEdgesChange, onNodesChange, reactFlow],
   );
 
-  const handleDragOver = useCallback((event: React.DragEvent) => {
+  const handleMouseMove = useCallback(
+    (event: React.MouseEvent) => {
+      updateMyPresence({
+        cursor: screenToFlowPosition({ x: event.clientX, y: event.clientY }),
+      });
+    },
+    [screenToFlowPosition, updateMyPresence],
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    updateMyPresence({ cursor: null });
+  }, [updateMyPresence]);
+
+  const handleDragOver =useCallback((event: React.DragEvent) => {
     if (!event.dataTransfer.types.includes(SHAPE_DRAG_MIME)) return;
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
@@ -149,10 +201,14 @@ function CanvasFlowInner() {
         onDelete={onDelete}
         connectionMode={ConnectionMode.Loose}
         colorMode="dark"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
         fitView
       >
         <Background variant={BackgroundVariant.Dots} />
+        <LiveCursors />
       </ReactFlow>
+      <PresenceAvatars />
       <CanvasControls
         reactFlow={reactFlow}
         canUndo={canUndo}
@@ -170,10 +226,10 @@ function CanvasFlowInner() {
   );
 }
 
-export function CanvasFlow() {
+export function CanvasFlow({ roomId }: { roomId: string }) {
   return (
     <ReactFlowProvider>
-      <CanvasFlowInner />
+      <CanvasFlowInner roomId={roomId} />
     </ReactFlowProvider>
   );
 }

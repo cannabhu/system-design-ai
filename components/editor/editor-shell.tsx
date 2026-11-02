@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { EditorNavbar } from "@/components/editor/editor-navbar";
+import { CanvasSaveContext } from "@/components/editor/canvas-save-context";
 import { ProjectDialogsProvider } from "@/components/editor/project-dialogs-context";
 import { AiSidebar } from "@/components/editor/ai-sidebar";
 import { ShareDialog } from "@/components/editor/share-dialog";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { StarterTemplatesContext } from "@/components/editor/starter-templates-context";
+import type { SaveStatus } from "@/hooks/use-canvas-autosave";
 import type { Project } from "@/lib/projects";
 
 interface EditorShellProps {
@@ -27,6 +29,12 @@ export function EditorShell({
   const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const saveHandler = useRef<(() => void) | null>(null);
+  const registerSave = useCallback((save: (() => void) | null) => {
+    saveHandler.current = save;
+  }, []);
+  const save = useCallback(() => saveHandler.current?.(), []);
   const { roomId } = useParams<{ roomId?: string }>();
   const activeProject = roomId
     ? [...ownedProjects, ...sharedProjects].find((p) => p.id === roomId)
@@ -42,6 +50,8 @@ export function EditorShell({
           isAiSidebarOpen={isAiSidebarOpen}
           onShare={() => setIsShareOpen(true)}
           onOpenTemplates={() => setIsTemplatesOpen(true)}
+          saveStatus={saveStatus}
+          onSave={save}
           onToggleAiSidebar={() => setIsAiSidebarOpen((open) => !open)}
         />
         <div className="relative flex min-h-0 flex-1 overflow-hidden">
@@ -52,13 +62,27 @@ export function EditorShell({
             onClose={() => setIsSidebarOpen(false)}
           />
           <div className="min-w-0 flex-1">
-            <StarterTemplatesContext.Provider
-              value={{ isOpen: isTemplatesOpen, setOpen: setIsTemplatesOpen }}
+            <CanvasSaveContext.Provider
+              value={{
+                status: saveStatus,
+                setStatus: setSaveStatus,
+                registerSave,
+                save,
+              }}
             >
-              {children}
-            </StarterTemplatesContext.Provider>
+              <StarterTemplatesContext.Provider
+                value={{ isOpen: isTemplatesOpen, setOpen: setIsTemplatesOpen }}
+              >
+                {children}
+              </StarterTemplatesContext.Provider>
+            </CanvasSaveContext.Provider>
           </div>
-          {activeProject && <AiSidebar isOpen={isAiSidebarOpen} />}
+          {activeProject && (
+            <AiSidebar
+              isOpen={isAiSidebarOpen}
+              onClose={() => setIsAiSidebarOpen(false)}
+            />
+          )}
         </div>
       </div>
       {activeProject && (

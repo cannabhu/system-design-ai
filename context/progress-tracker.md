@@ -52,13 +52,20 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - 18-starter-template: `components/editor/starter-templates.ts` defines `CanvasTemplate` and `CANVAS_TEMPLATES` (Microservices, CI/CD Pipeline, Event-Driven System) using shared canvas types, `NODE_COLORS`, and default shape sizes via small `node`/`link` helpers. `starter-templates-modal.tsx` is an `AppDialog` with a scrollable template grid; each card has an SVG preview (bounds from node positions, fitted to 240x140, lines between node centers, shapes/colors from node data), name, description, and an Import button that calls `onImport` then closes. A navbar Templates button toggles state held in `EditorShell`, shared via `StarterTemplatesContext` (`starter-templates-context.tsx`) because the navbar sits outside the Liveblocks room. `CanvasFlow` renders the modal; import removes all existing edges and nodes, then adds the template's through `onEdgesChange`/`onNodesChange` (so it syncs via Liveblocks), then calls `fitView`. No template saving, custom templates, or persistence.
 
+- 19-presence-avatars-cursor: `components/editor/presence-avatars.tsx` (top-right of the canvas only): up to five overlapping collaborator avatars from `useOthers` (excluding the Clerk `useUser` ID; photo or initials fallback, ring, `+N` chip, display-only), a divider only when collaborators exist, then the Clerk `UserButton` at the same size. `EditorNavbar` now hides its `UserButton` on a workspace (`projectName` set) so there is one; the editor home navbar is unchanged. `components/editor/live-cursors.tsx` renders other participants' cursors in a React Flow `ViewportPortal` (colored pointer + name badge in the presence color, counter-scaled by zoom). `CanvasFlow` broadcasts `cursor` (flow coordinates) on `onMouseMove` and clears it on `onMouseLeave`. Presence type field `isThinking` renamed to `thinking`. `npm run build` passes; not yet exercised with two live users.
+
+- 20-ai-sidebar-shell: `AiSidebar` (`components/editor/ai-sidebar.tsx`) is now a floating right overlay (absolute, `translate-x` slide-in like `ProjectSidebar`, `bg-base/95`, `border-surface-border`, `shadow-2xl`); open state stays in `EditorShell`, which also passes `onClose`. Header: bot icon, `AI Workspace`, `Collaborate with Ghost AI`, close button. shadcn `Tabs` (`AI Architect` / `Specs`; active uses `bg-accent-dim text-brand`, inactive `text-copy-muted`). `ai-architect-tab.tsx`: scrollable chat, empty state with bot icon and three starter chips (fill the input), local-only user/assistant message styling, auto-resizing textarea (72-160px), Enter sends, Shift+Enter newline, send button `bg-ai text-white`. `specs-tab.tsx`: `Generate Spec` button (inert) and a static demo spec card with a disabled download button. Spec token names mapped to existing tokens (`primary-text`→`copy-primary`, `muted-text`→`copy-muted`, `accent-text`→`ai-text`, `bg-brand-dim`→`bg-accent-dim`, `bg-accent`/`text-accent`→`bg-ai`/`bg-accent-dim`/`text-brand`; shadcn `accent` is the dim cyan, too faint for white text). No backend, Liveblocks, or AI generation.
+
+- 21-canvas-autosave: installed `@vercel/blob`. Reused `Project.canvasJsonPath` for the blob URL (no migration). `lib/canvas-storage.ts` writes `canvas/<projectId>.json` (private, overwrite, no suffix) and reads it back uncached. `GET/PUT /api/projects/[projectId]/canvas` (owner or collaborator; 401/404/400/502). `hooks/use-canvas-load.ts` fetches the saved canvas only if the Liveblocks room has no nodes or edges (re-checked after the fetch), adding them via `onNodesChange`/`onEdgesChange`. `hooks/use-canvas-autosave.ts` debounces 1.5s, skips unchanged snapshots (strips selected/dragging/measured), is enabled only after the load settles, and tracks `idle | saving | saved | error`. `CanvasSaveContext` bridges status and a save-now handler to the navbar Save button (spinner / check / error). Requires `BLOB_READ_WRITE_TOKEN` for a **private** Blob store. `npm run build` passes; not yet exercised against a live Blob store.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- AI chat in `AiSidebar`.
+- Wire AI generation into the AI Architect chat and the Specs tab.
+- Delete a project's canvas blob when the project is deleted (not part of 21).
 
 ## Open Questions
 
@@ -69,6 +76,8 @@ Update this file whenever the current phase, active feature, or implementation s
 - Cache Components is on: Clerk components and `auth()` must sit inside `<Suspense>`.
 - Auth is resource-based, not middleware-based: `proxy.ts` only runs `clerkMiddleware()`; its `matcher` config decides which requests invoke Clerk middleware, but it does not enforce path-based authorization or protect any route. Every new protected page, API route, or Server Function must call `auth.protect()` (or `auth()`) itself; the editor layout check doesn't cover API routes or private data fetched elsewhere.
 - Added standard Clerk URL env vars (`NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `..._SIGN_UP_URL`, `..._FALLBACK_REDIRECT_URL`) to `.env.local`; they were absent.
+
+- Project deletion records a `LiveblocksRoomCleanup` outbox row in the same transaction as the delete. The route attempts cleanup immediately; failures are retried with backoff by `/api/cron/liveblocks-cleanup` (Vercel cron in `vercel.json`, requires `CRON_SECRET`). Migration `20261102000000_liveblocks_room_cleanup` must be applied (`prisma migrate deploy`).
 
 ## Session Notes
 

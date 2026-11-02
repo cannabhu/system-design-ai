@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { getLiveblocks } from "@/lib/liveblocks";
+import { attemptRoomCleanup } from "@/lib/liveblocks-cleanup";
 import { jsonError, readJsonBody, readName } from "@/lib/project-request";
 
 type ProjectContext = RouteContext<"/api/projects/[projectId]">;
@@ -43,15 +43,17 @@ export async function DELETE(_request: Request, ctx: ProjectContext) {
   const denied = await findOwnership(projectId, userId);
   if (denied) return denied;
 
-  await prisma.project.delete({ where: { id: projectId } });
+  await prisma.$transaction([
+   prisma.project.delete({ where: { id: projectId } }),
+   prisma.liveblocksRoomCleanup.create({ data: { roomId: projectId } }),
+ ]);
 
-  // Best-effort cleanup: the project ID is the Liveblocks room ID. A missing
-  // room or a Liveblocks outage must not fail the deletion.
+  // The outbox row keeps the cleanup queued if this attempt fails.
   try {
-    await getLiveblocks().deleteRoom(projectId);
+    await attemptRoomCleanup(projectId);
   } catch (error) {
-    console.warn(`Failed to delete Liveblocks room ${projectId}`, error);
-  }
+    console.warn(`Liveblocks cleanup deferred for room ${projectId}`, error);
+ }
 
   return new Response(null, { status: 204 });
 }

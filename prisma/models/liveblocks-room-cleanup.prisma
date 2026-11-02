@@ -1,0 +1,11 @@
+// Durable outbox: written in the same transaction that deletes a project, and
+// removed only once the Liveblocks room is confirmed deleted.
+model LiveblocksRoomCleanup {
+  roomId        String   @id
+  attempts      Int      @default(0)
+  lastError     String?
+  nextAttemptAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([nextAttemptAt])
+}

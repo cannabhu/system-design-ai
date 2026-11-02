@@ -1,0 +1,3 @@
+{
+  "crons": [{ "path": "/api/cron/liveblocks-cleanup", "schedule": "*/15 * * * *" }]
+}

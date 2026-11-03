@@ -2,6 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import { ViewportPortal, useStore } from "@xyflow/react";
+import { Loader2 } from "lucide-react";
 import { useOthers } from "@liveblocks/react";
 
 export function LiveCursors() {
@@ -29,10 +30,16 @@ export function LiveCursors() {
               <path d="M1 1l5.5 14 2-5.5L14 7.5z" stroke="#0a0a0a" strokeWidth="1" />
             </svg>
             <span
-              className="ml-3 -mt-1 block w-max rounded-full px-2 py-0.5 text-[11px] font-medium text-black"
+              className="ml-3 -mt-1 flex w-max items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium text-black"
               style={{ backgroundColor: color }}
             >
               {other.info?.name ?? "Anonymous"}
+              {other.presence.thinking === true && (
+                <Loader2
+                  aria-label="Thinking"
+                  className="h-3 w-3 animate-spin"
+                />
+              )}
             </span>
           </div>
         );

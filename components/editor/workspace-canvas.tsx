@@ -7,6 +7,7 @@ import {
 } from "@liveblocks/react/suspense";
 import { ErrorBoundary } from "react-error-boundary";
 
+import { CanvasSnapshotBridge } from "@/components/editor/canvas-snapshot-bridge";
 import { AiChatBridge } from "@/components/editor/ai-chat-bridge";
 import { TeamChatBridge } from "@/components/editor/team-chat-bridge";
 import { AiStatusBridge } from "@/components/editor/ai-status-bridge";
@@ -22,7 +23,7 @@ function CanvasMessage({ children }: { children: React.ReactNode }) {
 
 export function WorkspaceCanvas({ roomId }: { roomId: string }) {
   return (
-    <main className="h-full bg-base">
+    <main className="h-full overflow-clip bg-base">
       <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
         <RoomProvider
           id={roomId}
@@ -41,6 +42,7 @@ export function WorkspaceCanvas({ roomId }: { roomId: string }) {
               <AiStatusBridge />
               <AiChatBridge />
               <TeamChatBridge />
+              <CanvasSnapshotBridge />
               <CanvasFlow roomId={roomId} />
             </ClientSideSuspense>
           </ErrorBoundary>

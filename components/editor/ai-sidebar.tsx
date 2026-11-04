@@ -87,7 +87,7 @@ export function AiSidebar({ roomId, isOpen, onClose }: AiSidebarProps) {
           <ChatTab />
         </TabsContent>
         <TabsContent value="specs" className="flex min-h-0 flex-col">
-          <SpecsTab />
+          <SpecsTab projectId={roomId} />
         </TabsContent>
       </Tabs>
     </aside>

@@ -1,7 +1,12 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// Auth checks live in the protected pages/layouts (see app/editor/*), not here.
-export default clerkMiddleware();
+const isProtectedRoute = createRouteMatcher(["/editor(.*)"]);
+
+// Unauthenticated users are redirected here, before rendering, so Next's dev
+// "instant" validation never hits a NEXT_REDIRECT thrown inside the layout.
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) await auth.protect();
+});
 
 export const config = {
   matcher: [

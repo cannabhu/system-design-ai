@@ -68,13 +68,19 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - Chat tab: the AI sidebar has a third tab (`AI Architect` / `Chat` / `Specs`) for human-to-human chat. New `team-chat` Liveblocks feed (`TEAM_CHAT_FEED_ID`, `teamChatMessageSchema` in `types/tasks.ts`), `TeamChatBridge` (in the room, next to the other bridges) publishing `{messages, currentUserId, send}` through `TeamChatContext` (`team-chat-context.tsx`, provided in `EditorShell`), and `ChatTab` (`chat-tab.tsx`: own messages green and right-aligned, others dark, Enter to send). Separate from `ai-chat` and `ai-status-feed`; not disabled during AI runs, no AI involvement. `tsc` and eslint pass; not exercised with two live users.
 
+- 27-spec-generation-flow: `POST /api/ai/spec` (`app/api/ai/spec/route.ts`) authenticates, validates `{roomId, chatHistory, nodes, edges}` with `specRequestSchema` (400), resolves access from user + `roomId` via `getProjectIfAccessible` (403; no client `projectId`), triggers `generate-spec`, stores a `TaskRun`, returns `{ runId }`. `POST /api/ai/spec/token` mirrors the design token route (run owner only, 404/403, 1h public token scoped to that run). `trigger/generate-spec.ts` exports `generateSpecTask` (`schemaTask`, id `generate-spec`, zod payload from `types/tasks.ts`, `retry.maxAttempts: 2` since it has no side effects), uses Gemini via `@ai-sdk/google` with the same model fallback as the design agent, sets run metadata `status` (started/processing/complete/error) and `message`, and returns the Markdown string. Spec is not stored; no frontend. Schemas added to `types/tasks.ts`.
+
+- 28-spec-persistence-download: `ProjectSpec` Prisma model (`prisma/models/project-spec.prisma`: `id`, `projectId` cascade-delete relation to `Project`, `filePath`, `createdAt`, index on `projectId+createdAt`; migration `20261104033208_project_spec` applied). Metadata only. `lib/spec-storage.ts` (`saveSpecBlob`, `readSpecBlob`; private Blob at `specs/<projectId>/<uuid>.md`, no `server-only` because the Trigger.dev task imports it). `generate-spec` now uploads the Markdown, creates the `ProjectSpec` row with the blob URL, and sets run metadata `specId` (still returns the Markdown). `GET /api/projects/[projectId]/specs/[specId]/download`: Clerk auth (401), `getProjectIfAccessible` (403), spec looked up by `id` + `projectId` (404 if it belongs elsewhere), fetches the blob server-side (404 missing file, 502 read error) and returns `text/markdown` with `Content-Disposition: attachment`; the Blob URL is never sent to the client. Canvas persistence and UI untouched. The Trigger.dev environment needs `BLOB_READ_WRITE_TOKEN` and `DATABASE_URL`. `prisma generate`, `tsc`, eslint and `npm run build` pass; not exercised against a live Blob store or Trigger.dev worker.
+
+- 29-spec-ui-integration: Specs tab lists the project's specs (date + filename, compact scrollable, clickable) from new metadata-only `GET /api/projects/[projectId]/specs` (auth + `getProjectIfAccessible`; the spec assumed a list API but only download existed; `ProjectSpec` has no filename column, so the name is derived as `spec-<date>.md` to match the download header). Clicking opens a shadcn `Dialog` preview (`spec-preview-dialog.tsx`) that fetches content through the existing download endpoint (never Blob directly), renders Markdown with `react-markdown` + `remark-gfm` (newly installed) in a `ScrollArea`, closes via button/Escape. Download buttons (list item + modal) link to the download route so the browser handles the file. Content is held only while the modal is open. No new global state; Generate Spec button still inert.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Wire AI generation into the Specs tab.
+- Wire the Generate Spec button to the generation flow (run metadata `specId`) and refresh the list.
 - Delete a project's canvas blob when the project is deleted (not part of 21).
 
 ## Open Questions

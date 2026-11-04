@@ -9,7 +9,7 @@ it, e.g.
 [`getOrCreateRoom`](https://liveblocks.io/docs/api-reference/liveblocks-node#get-or-create-rooms-roomId).
 
 ```tsx
-// Code snippet explaning it
+// Code snippet explaining it
 ```
 
 Recommendations on other references to read: `my-other-reference-file`.

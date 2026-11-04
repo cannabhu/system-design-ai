@@ -16,7 +16,8 @@ interface UseCanvasLoadOptions {
 /**
  * Loads the saved canvas once, only when the Liveblocks room is empty, so an
  * active collaboration is never overwritten. Returns true once that check has
- * settled (loaded, skipped, or failed).
+ * settled (loaded, skipped, or no saved canvas). Stays false if the fetch fails
+ * or the response can't be parsed, so autosave stays disabled.
  */
 export function useCanvasLoad({
   projectId,
@@ -52,17 +53,18 @@ export function useCanvasLoad({
           canvas: CanvasSnapshot | null;
         };
         // A collaborator may have filled the room while we were fetching.
-        if (!canvas || !isRoomEmpty()) return;
-        latest.current.onNodesChange(
-          canvas.nodes.map((item) => ({ type: "add", item })),
-        );
-        latest.current.onEdgesChange(
-          canvas.edges.map((item) => ({ type: "add", item })),
-        );
-      } catch {
-        // Fall through: the editor stays usable with an empty canvas.
-      } finally {
+        if (canvas && isRoomEmpty()) {
+          latest.current.onNodesChange(
+            canvas.nodes.map((item) => ({ type: "add", item })),
+          );
+          latest.current.onEdgesChange(
+            canvas.edges.map((item) => ({ type: "add", item })),
+          );
+        }
         setIsSettled(true);
+      } catch {
+        // Stay unsettled so autosave remains disabled and an empty canvas
+        // can't overwrite the saved snapshot we failed to load.
       }
     }
     void load();

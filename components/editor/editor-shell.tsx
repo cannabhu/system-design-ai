@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import type { ReactNode } from "react";
 
@@ -19,6 +19,10 @@ import {
 } from "@/components/editor/team-chat-context";
 import { EditorNavbar } from "@/components/editor/editor-navbar";
 import { CanvasSaveContext } from "@/components/editor/canvas-save-context";
+import {
+  CanvasSnapshotContext,
+  type CanvasSnapshot,
+} from "@/components/editor/canvas-snapshot-context";
 import { ProjectDialogsProvider } from "@/components/editor/project-dialogs-context";
 import { AiSidebar } from "@/components/editor/ai-sidebar";
 import { ShareDialog } from "@/components/editor/share-dialog";
@@ -58,6 +62,16 @@ export function EditorShell({
     DISCONNECTED_TEAM_CHAT,
   );
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const snapshotGetter = useRef<(() => CanvasSnapshot) | null>(null);
+  const snapshotValue = useMemo(
+    () => ({
+      register: (getter: (() => CanvasSnapshot) | null) => {
+        snapshotGetter.current = getter;
+      },
+      get: () => snapshotGetter.current?.() ?? null,
+    }),
+    [],
+  );
   const saveHandler = useRef<(() => void) | null>(null);
   const registerSave = useCallback((save: (() => void) | null) => {
     saveHandler.current = save;
@@ -77,6 +91,7 @@ export function EditorShell({
           <AiChatContext.Provider
             value={{ state: aiChat, setState: setAiChat }}
           >
+          <CanvasSnapshotContext.Provider value={snapshotValue}>
           <TeamChatContext.Provider
             value={{ state: teamChat, setState: setTeamChat }}
           >
@@ -91,7 +106,7 @@ export function EditorShell({
             onSave={save}
             onToggleAiSidebar={() => setIsAiSidebarOpen((open) => !open)}
           />
-          <div className="relative flex min-h-0 flex-1 overflow-hidden">
+          <div className="relative flex min-h-0 flex-1 overflow-clip">
             <ProjectSidebar
               isOpen={isSidebarOpen}
               ownedProjects={ownedProjects}
@@ -126,6 +141,7 @@ export function EditorShell({
             )}
           </div>
           </TeamChatContext.Provider>
+          </CanvasSnapshotContext.Provider>
           </AiChatContext.Provider>
         </AiStatusContext.Provider>
       </div>

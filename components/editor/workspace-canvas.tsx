@@ -7,6 +7,9 @@ import {
 } from "@liveblocks/react/suspense";
 import { ErrorBoundary } from "react-error-boundary";
 
+import { AiChatBridge } from "@/components/editor/ai-chat-bridge";
+import { TeamChatBridge } from "@/components/editor/team-chat-bridge";
+import { AiStatusBridge } from "@/components/editor/ai-status-bridge";
 import { CanvasFlow } from "@/components/editor/canvas-flow";
 
 function CanvasMessage({ children }: { children: React.ReactNode }) {
@@ -35,6 +38,9 @@ export function WorkspaceCanvas({ roomId }: { roomId: string }) {
             <ClientSideSuspense
               fallback={<CanvasMessage>Loading canvas…</CanvasMessage>}
             >
+              <AiStatusBridge />
+              <AiChatBridge />
+              <TeamChatBridge />
               <CanvasFlow roomId={roomId} />
             </ClientSideSuspense>
           </ErrorBoundary>

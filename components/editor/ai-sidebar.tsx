@@ -1,12 +1,18 @@
-import { Bot, X } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { Bot, Loader2, X } from "lucide-react";
 
 import { AiArchitectTab } from "@/components/editor/ai-architect-tab";
+import { useAiStatus } from "@/components/editor/ai-status-context";
+import { ChatTab } from "@/components/editor/chat-tab";
 import { SpecsTab } from "@/components/editor/specs-tab";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 interface AiSidebarProps {
+  roomId: string;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -14,7 +20,12 @@ interface AiSidebarProps {
 const tabTriggerClass =
   "text-copy-muted hover:text-copy-primary data-active:bg-accent-dim data-active:text-brand dark:data-active:border-transparent dark:data-active:bg-accent-dim dark:data-active:text-brand";
 
-export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
+export function AiSidebar({ roomId, isOpen, onClose }: AiSidebarProps) {
+  const { isGenerating } = useAiStatus();
+  // Covers the gap between submitting and the agent's presence appearing.
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isWorking = isGenerating || isSubmitting;
+
   return (
     <aside
       aria-label="AI assistant"
@@ -34,9 +45,18 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
             AI Workspace
           </h2>
           <p className="truncate text-xs text-copy-muted">
-            Collaborate with Ghost AI
+            Collaborate with Grand AI
           </p>
         </div>
+        {isWorking && (
+          <span
+            role="status"
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-accent-dim px-2 py-0.5 text-[11px] font-medium text-ai-text"
+          >
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Working
+          </span>
+        )}
         <Button
           variant="ghost"
           size="icon-sm"
@@ -53,12 +73,18 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
           <TabsTrigger value="architect" className={tabTriggerClass}>
             AI Architect
           </TabsTrigger>
+          <TabsTrigger value="chat" className={tabTriggerClass}>
+            Chat
+          </TabsTrigger>
           <TabsTrigger value="specs" className={tabTriggerClass}>
             Specs
           </TabsTrigger>
         </TabsList>
         <TabsContent value="architect" className="flex min-h-0 flex-col">
-          <AiArchitectTab />
+          <AiArchitectTab roomId={roomId} onBusyChange={setIsSubmitting} />
+        </TabsContent>
+        <TabsContent value="chat" className="flex min-h-0 flex-col">
+          <ChatTab />
         </TabsContent>
         <TabsContent value="specs" className="flex min-h-0 flex-col">
           <SpecsTab />

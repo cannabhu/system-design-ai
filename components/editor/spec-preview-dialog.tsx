@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Loader2 } from "lucide-react";
+import { AlertCircle, Download, FileText, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -62,17 +62,22 @@ export function SpecPreviewDialog({
 
   return (
     <Dialog open={spec !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[85vh] flex-col gap-3 rounded-3xl border border-surface-border bg-base p-5 sm:max-w-2xl">
-        <DialogHeader className="pr-8">
-          <DialogTitle className="text-copy-primary">
-            {spec?.filename}
-          </DialogTitle>
-          <DialogDescription className="text-copy-muted">
-            {spec ? new Date(spec.createdAt).toLocaleString() : ""}
-          </DialogDescription>
+      <DialogContent className="flex max-h-[85vh] flex-col gap-3 rounded-3xl border border-surface-border bg-surface p-6 shadow-2xl ring-0 sm:max-w-2xl">
+        <DialogHeader className="flex-row items-start gap-3 pr-8">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ai/15 text-ai-text">
+            <FileText className="h-5 w-5" />
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <DialogTitle className="truncate text-base leading-snug font-semibold text-copy-primary">
+              {spec?.filename}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-copy-muted">
+              {spec ? new Date(spec.createdAt).toLocaleString() : ""}
+            </DialogDescription>
+          </div>
         </DialogHeader>
 
-        <ScrollArea className="min-h-0 flex-1 rounded-2xl border border-surface-border bg-surface">
+        <ScrollArea className="min-h-0 flex-1 rounded-2xl border border-surface-border bg-base">
           <div className="max-h-[55vh] p-4 text-sm text-copy-secondary">
             {!current && (
               <div className="flex items-center gap-2 text-copy-muted">
@@ -81,7 +86,10 @@ export function SpecPreviewDialog({
               </div>
             )}
             {current?.status === "error" && (
-              <p className="text-state-error">Could not load this spec.</p>
+              <p className="flex items-center gap-2 text-state-error">
+                <AlertCircle className="h-4 w-4" />
+                Could not load this spec.
+              </p>
             )}
             {current?.status === "ready" && (
               <ReactMarkdown
@@ -109,8 +117,12 @@ export function SpecPreviewDialog({
           </div>
         </ScrollArea>
 
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose} className="text-copy-muted">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            className="text-copy-muted hover:bg-subtle hover:text-copy-primary"
+          >
             Close
           </Button>
           {spec && (

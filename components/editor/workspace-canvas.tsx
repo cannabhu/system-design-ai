@@ -12,15 +12,8 @@ import { CanvasSnapshotBridge } from "@/components/editor/canvas-snapshot-bridge
 import { AiChatBridge } from "@/components/editor/ai-chat-bridge";
 import { TeamChatBridge } from "@/components/editor/team-chat-bridge";
 import { AiStatusBridge } from "@/components/editor/ai-status-bridge";
+import { CanvasError, CanvasLoading } from "@/components/editor/canvas-loading";
 import { CanvasFlow } from "@/components/editor/canvas-flow";
-
-function CanvasMessage({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex h-full items-center justify-center bg-base px-6 text-center text-sm text-copy-muted">
-      {children}
-    </div>
-  );
-}
 
 export function WorkspaceCanvas({ roomId }: { roomId: string }) {
   return (
@@ -32,15 +25,9 @@ export function WorkspaceCanvas({ roomId }: { roomId: string }) {
         >
           <ErrorBoundary
             onError={(error) => Sentry.captureException(error)}
-            fallback={
-              <CanvasMessage>
-                Could not connect to the canvas. Refresh to try again.
-              </CanvasMessage>
-            }
+            fallback={<CanvasError />}
           >
-            <ClientSideSuspense
-              fallback={<CanvasMessage>Loading canvas…</CanvasMessage>}
-            >
+            <ClientSideSuspense fallback={<CanvasLoading />}>
               <AiStatusBridge />
               <AiChatBridge />
               <TeamChatBridge />

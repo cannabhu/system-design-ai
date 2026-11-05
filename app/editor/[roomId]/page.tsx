@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { AccessDenied } from "@/components/editor/access-denied";
+import { CanvasLoading } from "@/components/editor/canvas-loading";
 import { WorkspaceCanvas } from "@/components/editor/workspace-canvas";
 import {
   getCurrentIdentity,
@@ -26,7 +27,7 @@ export default function WorkspacePage({
   params: Promise<{ roomId: string }>;
 }) {
   return (
-    <Suspense fallback={<div className="h-full bg-base" />}>
+    <Suspense fallback={<CanvasLoading />}>
       <Workspace params={params} />
     </Suspense>
   );

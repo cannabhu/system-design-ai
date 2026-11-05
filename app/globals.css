@@ -135,3 +135,165 @@
   0% { transform: translateX(-100%); }
   100% { transform: translateX(300%); }
 }
+
+html {
+  scroll-padding-top: 4.5rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Landing hero */
+.hero-grid {
+  background-image: radial-gradient(var(--border-default) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 35%, #000 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 35%, #000 30%, transparent 100%);
+}
+
+@keyframes hero-node-in {
+  from { opacity: 0; transform: scale(0.85); }
+}
+@keyframes hero-edge-draw {
+  from { stroke-dashoffset: 1; }
+}
+@keyframes hero-fade-in {
+  from { opacity: 0; }
+}
+@keyframes hero-cursor-drift {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(-70px, -40px); }
+  100% { transform: translate(-20px, 30px); }
+}
+
+.hero-edge {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+/* Final state is the default; animation only runs when motion is allowed. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-node {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: hero-node-in 500ms cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0ms) backwards;
+  }
+  .hero-edge {
+    animation: hero-edge-draw 700ms ease-out var(--d, 0ms) backwards;
+  }
+  .hero-arrow,
+  .hero-fade,
+  .hero-cursor {
+    animation: hero-fade-in 400ms ease-out calc(var(--d, 0ms) + 500ms) backwards;
+  }
+  .hero-fade {
+    animation-delay: var(--d, 0ms);
+  }
+  .hero-cursor-wrap {
+    animation: hero-cursor-drift 9s ease-in-out 2s infinite alternate;
+  }
+}
+
+/* Landing scroll reveal: visible by default, hidden state set by JS only. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-reveal] {
+    transition:
+      opacity 600ms ease-out var(--reveal-delay, 0ms),
+      transform 600ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms);
+  }
+  [data-reveal="hidden"] {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  [data-reveal][data-reveal-variant="fade"] {
+    transition: opacity 800ms ease-out var(--reveal-delay, 0ms);
+  }
+  [data-reveal="hidden"][data-reveal-variant="fade"] {
+    transform: none;
+  }
+  [data-reveal="hidden"][data-reveal-variant="slide-left"] {
+    transform: translateX(-48px);
+  }
+  [data-reveal="hidden"][data-reveal-variant="slide-right"] {
+    transform: translateX(48px);
+  }
+  [data-reveal="hidden"][data-reveal-variant="zoom"] {
+    transform: scale(0.92);
+  }
+  [data-reveal][data-reveal-variant="blur"] {
+    transition:
+      opacity 700ms ease-out var(--reveal-delay, 0ms),
+      filter 700ms ease-out var(--reveal-delay, 0ms),
+      transform 700ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms);
+  }
+  [data-reveal="hidden"][data-reveal-variant="blur"] {
+    filter: blur(12px);
+    transform: translateY(8px) scale(0.98);
+  }
+  [data-reveal="hidden"][data-reveal-variant="slide-down"] {
+    transform: translateY(-32px);
+  }
+}
+
+/* Landing marquees (logos + reviews). Transform-only, constant speed.
+   Each list carries its own trailing padding so the track is exactly two equal
+   halves and the -50% loop has no seam. */
+@keyframes marquee-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes marquee-right {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+
+.marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-left var(--marquee-duration, 40s) linear infinite;
+  animation-play-state: paused;
+}
+.marquee[data-reverse="true"] .marquee-track {
+  animation-name: marquee-right;
+}
+.marquee-list {
+  display: flex;
+  flex-shrink: 0;
+  align-items: stretch;
+  gap: var(--marquee-gap, 1rem);
+  padding-right: var(--marquee-gap, 1rem);
+}
+
+/* Runs only while in view, not toggled off, and not hovered or focused. */
+.marquee-group[data-inview="true"][data-paused="false"]
+  .marquee:not(:hover):not(:focus-within)
+  .marquee-track {
+  animation-play-state: running;
+}
+
+/* Reduced motion: no animation, static scroll-snapped strip, no duplicate. */
+@media (prefers-reduced-motion: reduce) {
+  .marquee {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+  .marquee-track {
+    animation: none;
+    transform: none;
+  }
+  .marquee-list > * {
+    scroll-snap-align: start;
+  }
+  .marquee-dupe {
+    display: none;
+  }
+}

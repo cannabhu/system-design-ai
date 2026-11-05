@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/ui/themes";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SentryUser } from "@/components/sentry-user";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -52,6 +54,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             },
           }}
         >
+          <Suspense fallback={null}>
+            <SentryUser />
+          </Suspense>
           {children}
         </ClerkProvider>
       </body>

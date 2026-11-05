@@ -51,7 +51,7 @@ export function ShapePanel() {
   }
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-6 z-10 flex justify-center">
+    <div className="pointer-events-none absolute inset-x-0 bottom-16 z-10 sm:bottom-6 flex justify-center">
       <div aria-hidden className="pointer-events-none fixed -top-[9999px] left-0">
         {NODE_SHAPES.map((shape) => {
           const { width, height } = DEFAULT_SHAPE_SIZES[shape];

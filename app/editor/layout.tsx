@@ -1,16 +1,15 @@
 import { Suspense, type ReactNode } from "react";
-import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
 import { EditorShell } from "@/components/editor/editor-shell";
 import { getCurrentIdentity } from "@/lib/project-access";
 import { getOwnedProjects, getSharedProjects } from "@/lib/project-queries";
 
 async function ProtectedEditor({ children }: { children: ReactNode }) {
-  // Redirecting unauthenticated users happens in proxy.ts; this is only a guard.
-  const { userId: authedUserId } = await auth();
-  if (!authedUserId) return null;
+  // Resource-level auth check (replaces the proxy.ts route matcher). It runs
+  // inside <Suspense> so the redirect never throws during the static shell.
   const identity = await getCurrentIdentity();
-  if (!identity) return null;
+  if (!identity) redirect("/sign-in");
   const { userId, email } = identity;
 
   const [ownedProjects, sharedProjects] = await Promise.all([

@@ -49,7 +49,7 @@ export function CanvasControls({
   onRedo,
 }: CanvasControlsProps) {
   return (
-    <div className="pointer-events-auto absolute bottom-6 left-6 z-20 flex items-center gap-1 rounded-full border border-surface-border bg-surface/90 p-1.5 backdrop-blur">
+    <div className="pointer-events-auto absolute bottom-3 left-1/2 z-20 -translate-x-1/2 sm:bottom-6 sm:left-6 sm:translate-x-0 flex items-center gap-1 rounded-full border border-surface-border bg-surface/90 p-1.5 backdrop-blur">
       <ControlButton
         label="Zoom out"
         icon={ZoomOut}

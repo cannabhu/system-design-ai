@@ -15,9 +15,10 @@ interface UseCanvasLoadOptions {
 
 /**
  * Loads the saved canvas once, only when the Liveblocks room is empty, so an
- * active collaboration is never overwritten. Returns true once that check has
- * settled (loaded, skipped, or no saved canvas). Stays false if the fetch fails
- * or the response can't be parsed, so autosave stays disabled.
+ * active collaboration is never overwritten. `isLoaded` is true once that check
+ * has settled (loaded, skipped, or no saved canvas). If the fetch fails or the
+ * response can't be parsed it stays false and `hasFailed` is set, so saving
+ * stays disabled and the failure can be surfaced.
  */
 export function useCanvasLoad({
   projectId,
@@ -27,6 +28,7 @@ export function useCanvasLoad({
   onEdgesChange,
 }: UseCanvasLoadOptions) {
   const [isSettled, setIsSettled] = useState(false);
+  const [hasFailed, setHasFailed] = useState(false);
   const started = useRef(false);
   const latest = useRef({ nodes, edges, onNodesChange, onEdgesChange });
   useEffect(() => {
@@ -48,7 +50,7 @@ export function useCanvasLoad({
     async function load() {
       try {
         const response = await fetch(`/api/projects/${projectId}/canvas`);
-        if (!response.ok) return;
+        if (!response.ok) throw new Error("Load failed");
         const { canvas } = (await response.json()) as {
           canvas: CanvasSnapshot | null;
         };
@@ -63,12 +65,13 @@ export function useCanvasLoad({
         }
         setIsSettled(true);
       } catch {
-        // Stay unsettled so autosave remains disabled and an empty canvas
+        // Stay unsettled so saving remains disabled and an empty canvas
         // can't overwrite the saved snapshot we failed to load.
+        setHasFailed(true);
       }
     }
     void load();
   }, [projectId]);
 
-  return isSettled;
+  return { isLoaded: isSettled, hasFailed };
 }

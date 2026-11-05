@@ -1,11 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentIdentity, getProjectIfAccessible } from "@/lib/project-access";
 import { jsonError } from "@/lib/project-request";
+import { withSentry } from "@/lib/sentry-capture";
 
 type SpecsContext = RouteContext<"/api/projects/[projectId]/specs">;
 
 // Metadata only. Content is fetched through the download route; the Blob path is never returned.
-export async function GET(_request: Request, ctx: SpecsContext) {
+export const GET = withSentry(async (_request: Request, ctx: SpecsContext) => {
   const identity = await getCurrentIdentity();
   if (!identity) return jsonError("Unauthorized", 401);
 
@@ -26,4 +27,4 @@ export async function GET(_request: Request, ctx: SpecsContext) {
       createdAt: spec.createdAt.toISOString(),
     })),
   });
-}
+});

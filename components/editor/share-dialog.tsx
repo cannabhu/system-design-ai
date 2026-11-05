@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { Check, Copy, UserPlus, X } from "lucide-react";
+import { Check, Copy, Loader2, Share2, UserPlus, Users, X } from "lucide-react";
 
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,7 @@ function CollaboratorRow({
   const label = collaborator.name ?? collaborator.email;
 
   return (
-    <li className="flex items-center gap-3 rounded-xl px-2 py-2">
+    <li className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-elevated">
       {collaborator.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -204,15 +204,21 @@ export function ShareDialog({
         onOpenChange(next);
       }}
       title="Share project"
+      icon={Share2}
       description={
         isOwner
           ? "Invite people by email to collaborate on this project."
           : "People with access to this project."
       }
       footer={
-        <Button type="button" variant="outline" onClick={handleCopy}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleCopy}
+          className="w-full sm:w-auto"
+        >
           {copied ? (
-            <Check className="h-4 w-4" />
+            <Check className="h-4 w-4 text-state-success" />
           ) : (
             <Copy className="h-4 w-4" />
           )}
@@ -239,19 +245,31 @@ export function ShareDialog({
         )}
 
         {error && (
-          <p role="alert" className="text-xs text-state-error">
+          <p
+            role="alert"
+            className="rounded-xl bg-state-error/10 px-3 py-2 text-xs text-state-error"
+          >
             {error}
           </p>
         )}
 
         <div>
-          <h3 className="mb-1 text-xs font-medium text-copy-muted">
+          <h3 className="mb-1 flex items-center gap-1.5 text-xs font-medium tracking-wide text-copy-muted uppercase">
+            <Users className="h-3.5 w-3.5" />
             Collaborators
+            {!isLoading && (
+              <span className="rounded-full bg-subtle px-1.5 text-[11px] text-copy-secondary">
+                {collaborators.length}
+              </span>
+            )}
           </h3>
           {isLoading ? (
-            <p className="px-2 py-3 text-sm text-copy-muted">Loading…</p>
+            <p className="flex items-center gap-2 px-2 py-3 text-sm text-copy-muted">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading…
+            </p>
           ) : collaborators.length === 0 ? (
-            <p className="px-2 py-3 text-sm text-copy-muted">
+            <p className="rounded-xl border border-dashed border-surface-border px-3 py-4 text-center text-sm text-copy-muted">
               No collaborators yet.
             </p>
           ) : (

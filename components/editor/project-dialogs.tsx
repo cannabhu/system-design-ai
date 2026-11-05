@@ -1,6 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
+import { FolderPlus, Pencil, Trash2 } from "lucide-react";
 
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,7 @@ export function ProjectDialogs({ controller }: ProjectDialogsProps) {
         open={dialog.type === "create"}
         onOpenChange={(open) => !open && close()}
         title="Create project"
+        icon={FolderPlus}
         description="Give your architecture workspace a name."
         footer={
           <>
@@ -75,12 +77,12 @@ export function ProjectDialogs({ controller }: ProjectDialogsProps) {
         <form
           id="create-project-form"
           onSubmit={handleSubmit}
-          className="space-y-2"
+          className="space-y-3"
         >
           {nameField}
-          <p className="text-xs text-copy-muted">
-            Room ID:{" "}
-            <span className="font-mono text-copy-secondary">
+          <p className="flex items-center gap-2 rounded-xl bg-elevated px-3 py-2 text-xs text-copy-muted">
+            Room ID
+            <span className="truncate font-mono text-copy-secondary">
               {slug ? `${slug}-xxxxxx` : "—"}
             </span>
           </p>
@@ -92,6 +94,7 @@ export function ProjectDialogs({ controller }: ProjectDialogsProps) {
         open={dialog.type === "rename"}
         onOpenChange={(open) => !open && close()}
         title="Rename project"
+        icon={Pencil}
         description={
           dialog.type === "rename"
             ? `Current name: ${dialog.project.name}`
@@ -113,7 +116,7 @@ export function ProjectDialogs({ controller }: ProjectDialogsProps) {
         <form
           id="rename-project-form"
           onSubmit={handleSubmit}
-          className="space-y-2"
+          className="space-y-3"
         >
           {nameField}
           {errorMessage}
@@ -124,6 +127,8 @@ export function ProjectDialogs({ controller }: ProjectDialogsProps) {
         open={dialog.type === "delete"}
         onOpenChange={(open) => !open && close()}
         title="Delete project"
+        icon={Trash2}
+        tone="danger"
         description={
           dialog.type === "delete"
             ? `Are you sure you want to delete "${dialog.project.name}"? This action cannot be undone.`
@@ -131,7 +136,6 @@ export function ProjectDialogs({ controller }: ProjectDialogsProps) {
         }
         footer={
           <>
-            {errorMessage}
             {cancelButton}
             <Button
               type="button"
@@ -143,7 +147,9 @@ export function ProjectDialogs({ controller }: ProjectDialogsProps) {
             </Button>
           </>
         }
-      />
+      >
+        {errorMessage}
+      </AppDialog>
     </>
   );
 }

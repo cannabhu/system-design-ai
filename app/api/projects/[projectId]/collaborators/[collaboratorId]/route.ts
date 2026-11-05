@@ -4,12 +4,13 @@ import {
   getProjectIfAccessible,
 } from "@/lib/project-access";
 import { jsonError } from "@/lib/project-request";
+import { withSentry } from "@/lib/sentry-capture";
 
 type CollaboratorContext =
   RouteContext<"/api/projects/[projectId]/collaborators/[collaboratorId]">;
 
 // Owner only.
-export async function DELETE(_request: Request, ctx: CollaboratorContext) {
+export const DELETE = withSentry(async (_request: Request, ctx: CollaboratorContext) => {
   const identity = await getCurrentIdentity();
   if (!identity) return jsonError("Unauthorized", 401);
 
@@ -24,4 +25,4 @@ export async function DELETE(_request: Request, ctx: CollaboratorContext) {
   if (count === 0) return jsonError("Collaborator not found", 404);
 
   return new Response(null, { status: 204 });
-}
+});

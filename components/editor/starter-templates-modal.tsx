@@ -1,5 +1,7 @@
 "use client";
 
+import { LayoutTemplate } from "lucide-react";
+
 import { AppDialog } from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,7 +66,7 @@ function TemplatePreview({ template }: { template: CanvasTemplate }) {
       width={PREVIEW_WIDTH}
       height={PREVIEW_HEIGHT}
       viewBox={`0 0 ${PREVIEW_WIDTH} ${PREVIEW_HEIGHT}`}
-      className="rounded-2xl bg-base"
+      className="max-w-full rounded-xl border border-surface-border bg-base"
       aria-hidden
     >
       {template.edges.map((edge) => {
@@ -78,7 +80,7 @@ function TemplatePreview({ template }: { template: CanvasTemplate }) {
             y1={from.y + from.height / 2}
             x2={to.x + to.width / 2}
             y2={to.y + to.height / 2}
-            stroke="#8b8b8b"
+            stroke="#808090"
             strokeWidth={1}
           />
         );
@@ -161,6 +163,7 @@ export function StarterTemplatesModal({
       open={open}
       onOpenChange={onOpenChange}
       title="Starter templates"
+      icon={LayoutTemplate}
       description="Start from a pre-built diagram. Importing replaces everything on the current canvas."
       className="sm:max-w-3xl"
     >
@@ -168,7 +171,7 @@ export function StarterTemplatesModal({
         {CANVAS_TEMPLATES.map((template) => (
           <div
             key={template.id}
-            className="flex flex-col gap-3 rounded-2xl border border-surface-border bg-elevated p-3"
+            className="group flex flex-col gap-3 rounded-2xl border border-surface-border bg-elevated p-3 transition-colors hover:border-surface-border-subtle hover:bg-subtle"
           >
             <div className="flex justify-center">
               <TemplatePreview template={template} />

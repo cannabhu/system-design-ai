@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 import {
   AlertCircle,
@@ -35,11 +38,26 @@ const SAVE_LABELS: Record<SaveStatus, string> = {
 
 function SaveIcon({ status }: { status: SaveStatus }) {
   if (status === "saving") return <Loader2 className="h-4 w-4 animate-spin" />;
-  if (status === "saved") return <Check className="h-4 w-4 text-state-success" />;
+  if (status === "saved")
+    return <Check className="h-4 w-4 text-state-success" />;
   if (status === "error") {
     return <AlertCircle className="h-4 w-4 text-state-error" />;
   }
   return <Save className="h-4 w-4" />;
+}
+
+/**
+ * Clerk's UserButton mounts imperatively, so its host <div> exists on the
+ * client's first render but not in the server HTML. Render it only after
+ * mount, behind a same-size placeholder, to avoid the hydration mismatch.
+ */
+function NavbarUserButton() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) {
+    return <div aria-hidden className="h-7 w-7 rounded-full bg-subtle" />;
+  }
+  return <UserButton appearance={{ elements: { avatarBox: "h-7 w-7" } }} />;
 }
 
 export function EditorNavbar({
@@ -111,8 +129,7 @@ export function EditorNavbar({
             </Button>
           </>
         )}
-        {/* On a workspace the UserButton lives in the canvas presence group. */}
-        {!projectName && <UserButton />}
+        <NavbarUserButton />
       </div>
     </header>
   );

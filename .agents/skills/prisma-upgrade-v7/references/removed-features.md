@@ -68,8 +68,13 @@ const prisma = new PrismaClient({ adapter }).$extends({
   query: {
     $allModels: {
       async $allOperations({ operation, model, args, query }) {
-        console.log(`${model}.${operation}`, JSON.stringify(args))
-        return query(args)
+        const start = Date.now()
+        try {
+          return await query(args)
+        } finally {
+          const durationMs = Date.now() - start
+          console.log(`${model}.${operation} took ${durationMs}ms`)
+        }
       },
     },
   },

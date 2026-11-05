@@ -42,3 +42,45 @@ export const teamChatMessageSchema = z.object({
 });
 
 export type TeamChatMessage = z.infer<typeof teamChatMessageSchema>;
+
+/** Chat turn passed to spec generation as context. */
+export const specChatMessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string(),
+  sender: z.string().optional(),
+});
+
+/** Loose canvas snapshots: the model only needs labels, shapes and connections. */
+export const specNodeSchema = z
+  .object({
+    id: z.string(),
+    data: z
+      .object({ label: z.string().optional(), shape: z.string().optional() })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+export const specEdgeSchema = z
+  .object({
+    id: z.string().optional(),
+    source: z.string(),
+    target: z.string(),
+    data: z.object({ label: z.string().optional() }).passthrough().nullish(),
+  })
+  .passthrough();
+
+/** Client-supplied part of the spec request (project access is derived from `roomId`). */
+export const specRequestSchema = z.object({
+  roomId: z.string().min(1),
+  chatHistory: z.array(specChatMessageSchema).max(200),
+  nodes: z.array(specNodeSchema).max(500),
+  edges: z.array(specEdgeSchema).max(1000),
+});
+
+/** Payload of the `generate-spec` Trigger.dev task. */
+export const generateSpecPayloadSchema = specRequestSchema.extend({
+  projectId: z.string().min(1),
+});
+
+export type GenerateSpecPayload = z.infer<typeof generateSpecPayloadSchema>;

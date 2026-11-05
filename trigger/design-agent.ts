@@ -71,7 +71,10 @@ const actionSchema = z.object({
       "Node id (add_node: a new unique short id; others: an existing node id) or edge id (delete_edge).",
     ),
   shape: z.enum(NODE_SHAPES).optional().describe("add_node / update_node"),
-  label: z.string().optional().describe("add_node / update_node / add_edge"),
+  label: z
+    .string()
+    .optional()
+    .describe("add_node / update_node: node label. add_edge: REQUIRED, 1-3 word label for the connection."),
   color: z.enum(COLOR_FILLS).optional().describe("add_node / update_node fill color"),
   x: z.number().optional().describe("add_node / move_node, top-left"),
   y: z.number().optional().describe("add_node / move_node, top-left"),
@@ -121,7 +124,8 @@ Rules:
     .map(([s, d]) => `${s} ${d.width}x${d.height}`)
     .join(", ")}. Omit width/height unless a custom size is needed.
 - Layout: coordinates are the node's top-left corner, multiples of ${GRID}. Flow left to right in columns about 280px apart, with rows about 160px apart, nodes never overlapping, at least 80px gap between nodes. Place new nodes clear of existing ones.
-- Labels: short (1-3 words) and descriptive. Edge labels are optional and brief (e.g. "HTTP", "publish").
+- Node labels: short (1-3 words) and descriptive.
+- Edge labels: EVERY add_edge action MUST set a label, 1-3 words naming what flows over the connection (e.g. "Authenticate", "Browse Products", "Read Cache", "Place Order", "Publish Event"). Never leave an edge label empty.
 - Use at most ${MAX_ACTIONS} actions.`;
 }
 
@@ -261,7 +265,13 @@ export const designAgentTask = task({
           lastError = error;
           logger.warn("Model call failed", { modelId, error: String(error) });
           // A bad request will fail on every model, so only fall back on transient errors.
-          if (APICallError.isInstance(error) && !error.isRetryable) throw error;
+          if (
+            APICallError.isInstance(error) &&
+            !error.isRetryable &&
+            error.statusCode !== 404
+          ) {
+            throw error;
+          }
         }
       }
       if (!output) throw lastError;
@@ -357,7 +367,7 @@ export const designAgentTask = task({
                 source: from.id,
                 target: to.id,
                 ...pickHandles(from, to),
-                ...(action.label ? { data: { label: action.label } } : {}),
+                data: { label: action.label?.trim() || "Connects to" },
                 style: {
                   stroke: EDGE_COLOR,
                   strokeWidth: 1.5,

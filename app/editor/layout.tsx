@@ -6,7 +6,9 @@ import { getCurrentIdentity } from "@/lib/project-access";
 import { getOwnedProjects, getSharedProjects } from "@/lib/project-queries";
 
 async function ProtectedEditor({ children }: { children: ReactNode }) {
-  await auth.protect();
+  // Redirecting unauthenticated users happens in proxy.ts; this is only a guard.
+  const { userId: authedUserId } = await auth();
+  if (!authedUserId) return null;
   const identity = await getCurrentIdentity();
   if (!identity) return null;
   const { userId, email } = identity;

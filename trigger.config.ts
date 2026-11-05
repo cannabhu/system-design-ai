@@ -1,5 +1,7 @@
 import { defineConfig } from "@trigger.dev/sdk";
 
+import { captureTaskFailure } from "./trigger/sentry";
+
 export default defineConfig({
   project: "proj_nhfhekfqpavbzzmhllup",
   runtime: "node-24",
@@ -19,4 +21,13 @@ export default defineConfig({
     },
   },
   dirs: ["trigger"],
+  // Global hook: runs after a task has failed for good (no more retries).
+  onFailure: async ({ payload, error, ctx }) => {
+    await captureTaskFailure({
+      error,
+      taskId: ctx.task.id,
+      runId: ctx.run.id,
+      payload,
+    });
+  },
 });

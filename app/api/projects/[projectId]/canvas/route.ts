@@ -6,6 +6,7 @@ import {
 } from "@/lib/project-access";
 import { INVALID_JSON, jsonError, readJsonBody } from "@/lib/project-request";
 import type { CanvasSnapshot } from "@/types/canvas";
+import { reportApiError, withSentry } from "@/lib/sentry-capture";
 
 type CanvasContext = RouteContext<"/api/projects/[projectId]/canvas">;
 
@@ -17,7 +18,7 @@ function readSnapshot(body: unknown): CanvasSnapshot | null {
 }
 
 // Any member (owner or collaborator) can load the saved canvas.
-export async function GET(_request: Request, ctx: CanvasContext) {
+export const GET = withSentry(async (_request: Request, ctx: CanvasContext) => {
   const identity = await getCurrentIdentity();
   if (!identity) return jsonError("Unauthorized", 401);
 
@@ -34,13 +35,14 @@ export async function GET(_request: Request, ctx: CanvasContext) {
   try {
     const saved = readSnapshot(await readCanvasBlob(record.canvasJsonPath));
     return Response.json({ canvas: saved });
-  } catch {
+  } catch (error) {
+    reportApiError(error, projectId);
     return jsonError("Could not read the saved canvas", 502);
   }
-}
+});
 
 // Any member (owner or collaborator) can save, since they can all edit.
-export async function PUT(request: Request, ctx: CanvasContext) {
+export const PUT = withSentry(async (request: Request, ctx: CanvasContext) => {
   const identity = await getCurrentIdentity();
   if (!identity) return jsonError("Unauthorized", 401);
 
@@ -59,8 +61,9 @@ export async function PUT(request: Request, ctx: CanvasContext) {
       where: { id: projectId },
       data: { canvasJsonPath: url },
     });
-  } catch {
+  } catch (error) {
+    reportApiError(error, projectId);
     return jsonError("Could not save the canvas", 502);
   }
   return Response.json({ saved: true });
-}
+});

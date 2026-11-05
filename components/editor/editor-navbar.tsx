@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { UserButton } from "@clerk/nextjs";
 import {
   AlertCircle,
@@ -51,9 +51,15 @@ function SaveIcon({ status }: { status: SaveStatus }) {
  * client's first render but not in the server HTML. Render it only after
  * mount, behind a same-size placeholder, to avoid the hydration mismatch.
  */
+const subscribeNoop = () => () => {};
+
 function NavbarUserButton() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  // false during SSR and hydration, true afterwards — no setState in an effect.
+  const mounted = useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false,
+  );
   if (!mounted) {
     return <div aria-hidden className="h-7 w-7 rounded-full bg-subtle" />;
   }
@@ -74,8 +80,8 @@ export function EditorNavbar({
   const ToggleIcon = isSidebarOpen ? PanelLeftClose : PanelLeftOpen;
 
   return (
-    <header className="grid h-14 shrink-0 grid-cols-3 items-center border-b border-surface-border bg-surface px-3">
-      <div className="flex items-center justify-start">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-surface-border bg-surface px-3 md:grid md:grid-cols-3">
+      <div className="flex shrink-0 items-center justify-start">
         <Button
           variant="ghost"
           size="icon"
@@ -87,19 +93,25 @@ export function EditorNavbar({
           <ToggleIcon className="h-5 w-5" />
         </Button>
       </div>
-      <div className="flex items-center justify-center">
+      <div className="flex min-w-0 flex-1 items-center justify-center">
         {projectName && (
-          <h1 className="truncate text-sm font-medium text-copy-primary">
+          <h1 className="min-w-0 truncate text-sm font-medium text-copy-primary">
             {projectName}
           </h1>
         )}
       </div>
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex shrink-0 items-center justify-end gap-1 md:gap-2">
         {projectName && (
           <>
-            <Button variant="outline" size="sm" onClick={onOpenTemplates}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenTemplates}
+              aria-label="Templates"
+              className="max-md:w-9 max-md:px-0"
+            >
               <LayoutTemplate className="h-4 w-4" />
-              Templates
+              <span className="hidden md:inline">Templates</span>
             </Button>
             <Button
               variant="outline"
@@ -107,13 +119,23 @@ export function EditorNavbar({
               onClick={onSave}
               disabled={saveStatus === "saving"}
               aria-live="polite"
+              aria-label={SAVE_LABELS[saveStatus]}
+              className="max-md:w-9 max-md:px-0"
             >
               <SaveIcon status={saveStatus} />
-              {SAVE_LABELS[saveStatus]}
+              <span className="hidden md:inline">
+                {SAVE_LABELS[saveStatus]}
+              </span>
             </Button>
-            <Button variant="outline" size="sm" onClick={onShare}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onShare}
+              aria-label="Share"
+              className="max-md:w-9 max-md:px-0"
+            >
               <Share2 className="h-4 w-4" />
-              Share
+              <span className="hidden md:inline">Share</span>
             </Button>
             <Button
               variant="ghost"

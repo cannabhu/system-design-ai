@@ -10,8 +10,9 @@ import {
   readName,
   readProjectId,
 } from "@/lib/project-request";
+import { withSentry } from "@/lib/sentry-capture";
 
-export async function GET() {
+export const GET = withSentry(async () => {
   const { userId } = await auth();
   if (!userId) return jsonError("Unauthorized", 401);
 
@@ -21,9 +22,9 @@ export async function GET() {
   });
 
   return Response.json({ projects });
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withSentry(async (request: Request) => {
   const { userId } = await auth();
   if (!userId) return jsonError("Unauthorized", 401);
 
@@ -49,4 +50,4 @@ export async function POST(request: Request) {
   });
 
   return Response.json({ project }, { status: 201 });
-}
+});

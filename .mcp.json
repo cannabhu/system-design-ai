@@ -6,6 +6,9 @@
         "mcp"
       ],
       "command": "npx"
+    },
+    "Sentry": {
+      "url": "https://mcp.sentry.dev/mcp/grand-y3/system-design-ai"
     }
   }
 }

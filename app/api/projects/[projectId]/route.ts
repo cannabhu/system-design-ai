@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { attemptRoomCleanup } from "@/lib/liveblocks-cleanup";
 import { jsonError, readJsonBody, readName } from "@/lib/project-request";
+import { withSentry } from "@/lib/sentry-capture";
 
 type ProjectContext = RouteContext<"/api/projects/[projectId]">;
 
@@ -16,7 +17,7 @@ async function findOwnership(projectId: string, userId: string) {
   return null;
 }
 
-export async function PATCH(request: Request, ctx: ProjectContext) {
+export const PATCH = withSentry(async (request: Request, ctx: ProjectContext) => {
   const { userId } = await auth();
   if (!userId) return jsonError("Unauthorized", 401);
 
@@ -33,9 +34,9 @@ export async function PATCH(request: Request, ctx: ProjectContext) {
   });
 
   return Response.json({ project });
-}
+});
 
-export async function DELETE(_request: Request, ctx: ProjectContext) {
+export const DELETE = withSentry(async (_request: Request, ctx: ProjectContext) => {
   const { userId } = await auth();
   if (!userId) return jsonError("Unauthorized", 401);
 
@@ -56,4 +57,4 @@ export async function DELETE(_request: Request, ctx: ProjectContext) {
  }
 
   return new Response(null, { status: 204 });
-}
+});

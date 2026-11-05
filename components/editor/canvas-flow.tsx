@@ -69,7 +69,7 @@ function CanvasFlowInner({ roomId }: { roomId: string }) {
 
   useKeyboardShortcuts({ reactFlow, undo, redo });
 
-  const isLoaded = useCanvasLoad({
+  const { isLoaded, hasFailed } = useCanvasLoad({
     projectId: roomId,
     nodes,
     edges,
@@ -81,6 +81,7 @@ function CanvasFlowInner({ roomId }: { roomId: string }) {
     nodes,
     edges,
     enabled: isLoaded,
+    loadFailed: hasFailed,
   });
   const { setStatus, registerSave } = useCanvasSave();
 

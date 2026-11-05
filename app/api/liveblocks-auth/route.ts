@@ -4,8 +4,9 @@ import { getCursorColor } from "@/lib/cursor-color";
 import { getLiveblocks } from "@/lib/liveblocks";
 import { getCurrentIdentity, getProjectIfAccessible } from "@/lib/project-access";
 import { INVALID_JSON, jsonError, readJsonBody } from "@/lib/project-request";
+import { withSentry } from "@/lib/sentry-capture";
 
-export async function POST(request: Request) {
+export const POST = withSentry(async (request: Request, _ctx, tags) => {
   const identity = await getCurrentIdentity();
   if (!identity) return jsonError("Unauthorized", 401);
 
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
   }
 
   // The project ID is the Liveblocks room ID.
+  tags.projectId = room;
   const project = await getProjectIfAccessible(room, identity);
   if (!project) return jsonError("Forbidden", 403);
 
@@ -44,4 +46,4 @@ export async function POST(request: Request) {
 
   const { status, body: token } = await session.authorize();
   return new Response(token, { status });
-}
+});

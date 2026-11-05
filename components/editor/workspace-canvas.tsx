@@ -5,6 +5,7 @@ import {
   LiveblocksProvider,
   RoomProvider,
 } from "@liveblocks/react/suspense";
+import * as Sentry from "@sentry/nextjs";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { CanvasSnapshotBridge } from "@/components/editor/canvas-snapshot-bridge";
@@ -30,6 +31,7 @@ export function WorkspaceCanvas({ roomId }: { roomId: string }) {
           initialPresence={{ cursor: null, thinking: false }}
         >
           <ErrorBoundary
+            onError={(error) => Sentry.captureException(error)}
             fallback={
               <CanvasMessage>
                 Could not connect to the canvas. Refresh to try again.

@@ -4,8 +4,9 @@ import type { designAgentTask } from "@/trigger/design-agent";
 import { prisma } from "@/lib/prisma";
 import { getCurrentIdentity, getProjectIfAccessible } from "@/lib/project-access";
 import { INVALID_JSON, jsonError, readJsonBody } from "@/lib/project-request";
+import { withSentry } from "@/lib/sentry-capture";
 
-export async function POST(request: Request) {
+export const POST = withSentry(async (request: Request, _ctx, tags) => {
   const identity = await getCurrentIdentity();
   if (!identity) return jsonError("Unauthorized", 401);
 
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
   // The project ID is the Liveblocks room ID.
   if (roomId !== projectId) return jsonError("Room does not match project", 400);
 
+  tags.projectId = projectId;
   const project = await getProjectIfAccessible(projectId, identity);
   if (!project) return jsonError("Forbidden", 403);
 
@@ -41,4 +43,4 @@ export async function POST(request: Request) {
   });
 
   return Response.json({ runId: handle.id });
-}
+});

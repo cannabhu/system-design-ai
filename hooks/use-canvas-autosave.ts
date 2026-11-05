@@ -14,6 +14,8 @@ interface UseCanvasAutosaveOptions {
   edges: CanvasEdge[];
   /** Autosave stays off until the initial load has settled. */
   enabled: boolean;
+  /** The initial load failed; surfaced through the "error" save status. */
+  loadFailed?: boolean;
 }
 
 // Drop per-viewer UI state so selecting or measuring never triggers a save.
@@ -31,14 +33,17 @@ export function useCanvasAutosave({
   nodes,
   edges,
   enabled,
+  loadFailed = false,
 }: UseCanvasAutosaveOptions) {
   const [status, setStatus] = useState<SaveStatus>("idle");
+  const enabledRef = useRef(enabled);
   const latest = useRef({ nodes, edges });
   const lastSaved = useRef<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     latest.current = { nodes, edges };
+    enabledRef.current = enabled;
   });
 
   const save = useCallback(async () => {
@@ -79,10 +84,13 @@ export function useCanvasAutosave({
     };
   }, [enabled, nodes, edges, save]);
 
-  const saveNow = useCallback(() => {
+  const saveNow = useCallback(async () => {
+    // Manual saves stay blocked until the canvas has loaded successfully, so a
+    // failed load can never overwrite the saved snapshot with an empty canvas.
+    if (!enabledRef.current || lastSaved.current === null) return;
     if (timer.current) clearTimeout(timer.current);
-    return save();
+    await save();
   }, [save]);
 
-  return { status, saveNow };
+  return { status: loadFailed ? "error" : status, saveNow };
 }

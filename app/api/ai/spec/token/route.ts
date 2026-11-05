@@ -3,8 +3,9 @@ import { auth } from "@trigger.dev/sdk";
 import { prisma } from "@/lib/prisma";
 import { getCurrentIdentity } from "@/lib/project-access";
 import { INVALID_JSON, jsonError, readJsonBody } from "@/lib/project-request";
+import { withSentry } from "@/lib/sentry-capture";
 
-export async function POST(request: Request) {
+export const POST = withSentry(async (request: Request) => {
   const identity = await getCurrentIdentity();
   if (!identity) return jsonError("Unauthorized", 401);
 
@@ -31,4 +32,4 @@ export async function POST(request: Request) {
   });
 
   return Response.json({ token });
-}
+});

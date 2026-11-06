@@ -5,7 +5,6 @@ import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SentryUser } from "@/components/sentry-user";
-import { Analytics } from "@vercel/analytics/next"
 import { THEME_COLOR, siteConfig } from "@/lib/site";
 import "./globals.css";
 

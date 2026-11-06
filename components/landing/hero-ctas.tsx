@@ -16,7 +16,11 @@ function CtaRow({ primaryHref }: { primaryHref: string }) {
       </Link>
       <a
         href="#about"
-        className={cn(buttonVariants({ variant: "outline" }), base)}
+        className={cn(
+          buttonVariants({ variant: "outline" }),
+          base,
+          "text-white hover:text-white",
+        )}
       >
         See how it works
       </a>

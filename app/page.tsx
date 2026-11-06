@@ -8,19 +8,44 @@ import { HeroSection } from "@/components/landing/hero-section";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { LandingNavbar } from "@/components/landing/landing-navbar";
 import { ReviewsSection } from "@/components/landing/reviews-section";
+import { JsonLd } from "@/components/seo/json-ld";
+import { siteConfig } from "@/lib/site";
 
-const title = "Grand AI | AI-powered system design workspace";
-const description =
-  "Describe a system, refine it with your team on a shared canvas, and generate the architecture and spec with Grand AI.";
+const structuredData = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteConfig.name,
+    url: siteConfig.url,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: siteConfig.name,
+    url: siteConfig.url,
+    logo: `${siteConfig.url}/icon-512.png`,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: siteConfig.name,
+    applicationCategory: "DeveloperApplication",
+    operatingSystem: "Web",
+    description: siteConfig.description,
+    url: siteConfig.url,
+  },
+];
 
 export const metadata: Metadata = {
-  title,
-  description,
+  title: { absolute: siteConfig.title },
+  description: siteConfig.description,
+  alternates: { canonical: "/" },
   openGraph: {
-    title,
-    description,
+    title: siteConfig.title,
+    description: siteConfig.description,
     type: "website",
-    siteName: "Grand AI",
+    siteName: siteConfig.name,
+    url: "/",
   },
 };
 
@@ -51,6 +76,9 @@ export default function Home() {
         </Suspense>
       </main>
       <LandingFooter />
+      {structuredData.map((data) => (
+        <JsonLd key={data["@type"]} data={data} />
+      ))}
     </div>
   );
 }

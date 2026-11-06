@@ -1,9 +1,15 @@
+import type { Metadata } from "next";
 import { Suspense, type ReactNode } from "react";
 import { redirect } from "next/navigation";
 
 import { EditorShell } from "@/components/editor/editor-shell";
 import { getCurrentIdentity } from "@/lib/project-access";
 import { getOwnedProjects, getSharedProjects } from "@/lib/project-queries";
+
+export const metadata: Metadata = {
+  title: "Editor",
+  robots: { index: false, follow: false },
+};
 
 async function ProtectedEditor({ children }: { children: ReactNode }) {
   // Resource-level auth check (replaces the proxy.ts route matcher). It runs

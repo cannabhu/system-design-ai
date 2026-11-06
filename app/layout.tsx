@@ -4,6 +4,7 @@ import { dark } from "@clerk/ui/themes";
 import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SentryUser } from "@/components/sentry-user";
+import { Analytics } from "@vercel/analytics/next"
 import { THEME_COLOR, siteConfig } from "@/lib/site";
 import "./globals.css";
 
@@ -87,7 +88,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Suspense fallback={null}>
             <SentryUser />
           </Suspense>
+          
           {children}
+          <Analytics />
         </ClerkProvider>
       </body>
     </html>
